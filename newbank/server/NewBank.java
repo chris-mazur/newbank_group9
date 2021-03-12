@@ -15,6 +15,7 @@ public class NewBank {
 	private void addTestData() {
 		Customer bhagy = new Customer();
 		bhagy.addAccount(new Account("Main", 1000.0));
+		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		
 		Customer christina = new Customer();
@@ -31,11 +32,12 @@ public class NewBank {
 	}
 	
 	public synchronized CustomerID checkLogInDetails(String userName, String password) {
-		if(customers.containsKey(userName)) {
+		if(customers.containsKey(userName) && (customers.get(userName).getPassword().equals(password))) {
 			return new CustomerID(userName);
 		}
 		return null;
 	}
+
 
 	// commands from the NewBank customer are processed in this method
 	public synchronized String processRequest(CustomerID customer, String request) {
