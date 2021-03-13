@@ -1,12 +1,13 @@
 package newbank.server;
 
 import java.util.HashMap;
+import java.util.regex.*;
 
 public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
 	private HashMap<String,Customer> customers;
-	
+
 	private NewBank() {
 		customers = new HashMap<>();
 		addTestData();
@@ -38,20 +39,47 @@ public class NewBank {
 		return null;
 	}
 
-
 	// commands from the NewBank customer are processed in this method
 	public synchronized String processRequest(CustomerID customer, String request) {
+
+		String[] requestParams = request.split("\\s+");
+
 		if(customers.containsKey(customer.getKey())) {
-			switch(request) {
-			case "SHOWMYACCOUNTS" : return showMyAccounts(customer);
-			default : return "FAIL";
+			switch(requestParams[0]) {
+				case "SHOWMYACCOUNTS":
+					return showMyAccounts(customer);
+				case "NEWACCOUNT":
+					return newAccount(customer, requestParams);
+				case "LOGOUT":
+					return "LOGOUT";
+				default:
+					return "FAIL";
 			}
 		}
 		return "FAIL";
 	}
-	
+
 	private String showMyAccounts(CustomerID customer) {
 		return (customers.get(customer.getKey())).accountsToString();
+	}
+
+	private String newAccount(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			if(isNumeric(requestParams[1])) {
+				return "Account name cannot be a number. Try again";
+			} else {
+				String accountName = requestParams[1];
+				customers.get(customer.getKey()).addAccount(new Account(accountName,0));
+				return "Account created: " + accountName;
+			}
+		}
+		return "Invalid entry. Try NEWACCOUNT <account name>";
+	}
+
+	//method to check if a String is Numeric. Useful when checking user input
+	private boolean isNumeric(String string) {
+		String regex = "-?\\d+(\\.\\d+)?";
+		return Pattern.matches(regex, string);
 	}
 
 }
