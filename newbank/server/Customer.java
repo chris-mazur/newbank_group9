@@ -13,8 +13,14 @@ public class Customer {
 	
 	public String accountsToString() {
 		String s = "";
+		boolean first = true;
 		for(Account a : accounts) {
-			s += a.toString();
+			if (first) {
+				s += a.toString();
+				first = false;
+			} else {
+				s += "\n" + a.toString();
+			}
 		}
 		return s;
 	}
