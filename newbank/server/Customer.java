@@ -15,12 +15,12 @@ public class Customer {
 		String s = "";
 		boolean first = true;
 		for(Account a : accounts) {
-			if (first) {
-				s += a.toString();
-				first = false;
+			if(!first) {
+				s += "\n";
 			} else {
-				s += "\n" + a.toString();
+				first = false;
 			}
+			s += a.toString();
 		}
 		return s;
 	}

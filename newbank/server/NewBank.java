@@ -49,14 +49,7 @@ public class NewBank {
 				case "SHOWMYACCOUNTS":
 					return showMyAccounts(customer);
 				case "NEWACCOUNT":
-					if(requestParams.length == 2){
-						if(isNumeric(requestParams[1])) {
-							return "Account name cannot be a number. Try again";
-						} else {
-							return newAccount(customer, requestParams[1]);
-						}
-					}
-					return "Invalid entry. Try NEWACCOUNT <account name>";
+					return newAccount(customer, requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
@@ -70,9 +63,17 @@ public class NewBank {
 		return (customers.get(customer.getKey())).accountsToString();
 	}
 
-	private String newAccount(CustomerID customer, String accountName) {
-		customers.get(customer.getKey()).addAccount(new Account(accountName,0));
-		return "Account created: " + accountName;
+	private String newAccount(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			if(isNumeric(requestParams[1])) {
+				return "Account name cannot be a number. Try again";
+			} else {
+				String accountName = requestParams[1];
+				customers.get(customer.getKey()).addAccount(new Account(accountName,0));
+				return "Account created: " + accountName;
+			}
+		}
+		return "Invalid entry. Try NEWACCOUNT <account name>";
 	}
 
 	//method to check if a String is Numeric. Useful when checking user input
