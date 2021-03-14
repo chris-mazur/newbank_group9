@@ -46,6 +46,8 @@ public class NewBank {
 
 		if(customers.containsKey(customer.getKey())) {
 			switch(requestParams[0]) {
+				case "HELP":
+					return showHelp();
 				case "SHOWMYACCOUNTS":
 					return showMyAccounts(customer);
 				case "NEWACCOUNT":
@@ -80,6 +82,16 @@ public class NewBank {
 	private boolean isNumeric(String string) {
 		String regex = "-?\\d+(\\.\\d+)?";
 		return Pattern.matches(regex, string);
+	}
+
+	// provides the user with an overview of all commands for interacting with the client
+	private String showHelp() {
+		// working draft to outline all possible commands (please update when necessary)
+		return "Welcome to NewBank! Here is a list of commands you can use:\n" +
+				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
+				"NEWACCOUNT - Creates a new bank account; enter the command followed by the name " +
+				"you would like to give to the account.\n" +
+				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
 }
