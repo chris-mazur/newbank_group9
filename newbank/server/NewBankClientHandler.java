@@ -38,6 +38,10 @@ public class NewBankClientHandler extends Thread{
 					String request = in.readLine();
 					System.out.println("Request from " + customer.getKey());
 					String response = bank.processRequest(customer, request);
+					if(response.equals("LOGOUT")) {
+						out.println("Logging out...");
+						break;
+					}	
 					out.println(response);
 				}
 			}
