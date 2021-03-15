@@ -1,12 +1,13 @@
 package newbank.server;
 
 import java.util.HashMap;
+import java.util.regex.*;
 
 public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
 	private HashMap<String,Customer> customers;
-	
+
 	private NewBank() {
 		customers = new HashMap<>();
 		addTestData();
@@ -38,21 +39,59 @@ public class NewBank {
 		return null;
 	}
 
-
 	// commands from the NewBank customer are processed in this method
 	public synchronized String processRequest(CustomerID customer, String request) {
+
+		String[] requestParams = request.split("\\s+");
+
 		if(customers.containsKey(customer.getKey())) {
-			switch(request) {
-			case "SHOWMYACCOUNTS" : return showMyAccounts(customer);
-			case "LOGOUT" : return "LOGOUT";
-			default : return "FAIL";
+			switch(requestParams[0]) {
+				case "HELP":
+					return showHelp();
+				case "SHOWMYACCOUNTS":
+					return showMyAccounts(customer);
+				case "NEWACCOUNT":
+					return newAccount(customer, requestParams);
+				case "LOGOUT":
+					return "LOGOUT";
+				default:
+					return "FAIL";
 			}
 		}
 		return "FAIL";
 	}
-	
+
 	private String showMyAccounts(CustomerID customer) {
 		return (customers.get(customer.getKey())).accountsToString();
+	}
+
+	private String newAccount(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			if(isNumeric(requestParams[1])) {
+				return "Account name cannot be a number. Try again";
+			} else {
+				String accountName = requestParams[1];
+				customers.get(customer.getKey()).addAccount(new Account(accountName,0));
+				return "Account created: " + accountName;
+			}
+		}
+		return "Invalid entry. Try NEWACCOUNT <account name>";
+	}
+
+	//method to check if a String is Numeric. Useful when checking user input
+	private boolean isNumeric(String string) {
+		String regex = "-?\\d+(\\.\\d+)?";
+		return Pattern.matches(regex, string);
+	}
+
+	// provides the user with an overview of all commands for interacting with the client
+	private String showHelp() {
+		// working draft to outline all possible commands (please update when necessary)
+		return "Welcome to NewBank! Here is a list of commands you can use:\n" +
+				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
+				"NEWACCOUNT - Creates a new bank account; enter the command followed by the name " +
+				"you would like to give to the account.\n" +
+				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
 }

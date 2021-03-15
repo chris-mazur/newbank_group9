@@ -13,7 +13,13 @@ public class Customer {
 	
 	public String accountsToString() {
 		String s = "";
+		boolean first = true;
 		for(Account a : accounts) {
+			if(!first) {
+				s += "\n";
+			} else {
+				first = false;
+			}
 			s += a.toString();
 		}
 		return s;
