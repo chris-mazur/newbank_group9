@@ -37,5 +37,15 @@ public class Customer {
 		accounts.add(account);		
 	}
 
+	// return a requested customer account if it exists (or null if not)
+	public Account getAccount(String accountName) {
+		for(Account account : accounts) {
+			if(account.getName().equals(accountName)) {
+				return account;
+			}
+		}
+		return null;
+	}
+
 
 }
