@@ -112,6 +112,10 @@ public class NewBank {
 			double depositAmount = 0;
 			try {
 				depositAmount = Double.parseDouble(requestParams[1]);
+				if(depositAmount <= 0) {
+					// a deposit amount must be positive
+					inputErrorPrompts += "Deposit amount, '" + requestParams[1] + "' is not valid.\n";
+				}
 			} catch (NumberFormatException e) {
 				inputErrorPrompts += "Deposit amount, '" + requestParams[1] + "' is not valid.\n";
 			}
@@ -139,6 +143,10 @@ public class NewBank {
 			double transferAmount = 0;
 			try {
 				transferAmount = Double.parseDouble(requestParams[1]);
+				if(transferAmount <= 0) {
+					// a transfer amount must be positive
+					inputErrorPrompts += "Transfer amount, '" + requestParams[1] + "' is not valid.\n";
+				}
 			} catch (NumberFormatException e) {
 				inputErrorPrompts += "Transfer amount, '" + requestParams[1] + "' is not valid.\n";
 			}
