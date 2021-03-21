@@ -22,10 +22,12 @@ public class NewBank {
 		
 		Customer christina = new Customer();
 		christina.addAccount(new Account("Savings", 1500.0));
+		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer();
 		john.addAccount(new Account("Checking", 250.0));
+		john.setPassword("test9999");
 		customers.put("John", john);
 	}
 	
@@ -57,6 +59,8 @@ public class NewBank {
 					return depositFunds(customer, requestParams);
 				case "TRANSFERFUNDS":
 					return transferFunds(customer, requestParams);
+				case "PAY":
+					return makePayment(customer, requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
@@ -100,6 +104,8 @@ public class NewBank {
 				"added, then the account name to deposit funds to.\n" +
 				"TRANSFERFUNDS - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
+				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
+				"account to pay from, name of the payee, and the account name of the payee.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
@@ -168,6 +174,48 @@ public class NewBank {
 					depositAccount.getName();
 		}
 		return "Invalid entry. Try TRANSFERFUNDS <amount> <account to withraw from> <account to deposit to>";
+	}
+
+	// makes a payment to another customer in the same bank
+	private String makePayment(CustomerID customer, String[] requestParams) {
+		// confirm that the correct number of parameters have been input
+		if(requestParams.length == 5) {
+			// confirm that input parameters are valid, and provide prompts to the user if not
+			String inputErrorPrompts = "";
+			double paymentAmount = 0;
+			try {
+				paymentAmount = Double.parseDouble(requestParams[1]);
+				if(paymentAmount <= 0) {
+					// a transfer amount must be positive
+					inputErrorPrompts += "Payment amount, '" + requestParams[1] + "' is not valid.\n";
+				}
+			} catch (NumberFormatException e) {
+				inputErrorPrompts += "Payment amount, '" + requestParams[1] + "' is not valid.\n";
+			}
+			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
+			if(withdrawalAccount == null) {
+				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+			}
+			Customer payee = customers.get(requestParams[3]);
+			if(payee == null) {
+				// This doesn't work as expected (returns an infinite loop of "null")
+				// TODO - fixing the invalid username/password issue that is on Trello will likely solve this problem
+				inputErrorPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
+			}
+			Account payeeAccount = payee.getAccount(requestParams[4]);
+			if (payeeAccount == null) {
+				inputErrorPrompts += "Payee account, '" + requestParams[4] + "' does not exist.\n";
+			}
+			if(inputErrorPrompts.length() > 0) {
+				return "Payment could not be made:\n" + inputErrorPrompts;
+			}
+			// make payment
+			withdrawalAccount.withdrawFunds(paymentAmount);
+			payeeAccount.depositFunds(paymentAmount);
+			return "Payment of " + paymentAmount + " successfully made.\n" +
+					"Remaining balance in " + withdrawalAccount.toString();
+		}
+		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
 	}
 
 }

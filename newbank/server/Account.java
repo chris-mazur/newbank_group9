@@ -18,6 +18,10 @@ public class Account {
 		return accountName;
 	}
 
+	public String getBalance() {
+		return String.valueOf(accountBalance);
+	}
+
 	public void withdrawFunds(double amount) {
 		accountBalance -= amount;
 	}
