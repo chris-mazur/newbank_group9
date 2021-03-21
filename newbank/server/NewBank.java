@@ -127,7 +127,7 @@ public class NewBank {
 			}
 			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(depositAccount == null) {
-				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
+				inputErrorPrompts += "Account for deposit '" + requestParams[2] + "' does not exist.\n";
 			}
 			if(inputErrorPrompts.length() > 0) {
 				return "Deposit could not be made: \n" + inputErrorPrompts;
@@ -181,7 +181,7 @@ public class NewBank {
 			return transferAmount + " transferred from " + withdrawalAccount.getName() + " to " +
 					depositAccount.getName();
 		}
-		return "Invalid entry. Try TRANSFERFUNDS <amount> <account to withraw from> <account to deposit to>";
+		return "Invalid entry. Try MOVE <amount> <account to withraw from> <account to deposit to>";
 	}
 
 	// makes a payment to another customer in the same bank
