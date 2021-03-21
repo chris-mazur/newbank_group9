@@ -2,6 +2,7 @@ package newbank.server;
 
 import java.util.HashMap;
 import java.util.regex.*;
+import java.lang.Double;
 
 public class NewBank {
 	
@@ -52,6 +53,8 @@ public class NewBank {
 					return showMyAccounts(customer);
 				case "NEWACCOUNT":
 					return newAccount(customer, requestParams);
+				case "TRANSFERFUNDS":
+					return transferFunds(customer, requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
@@ -71,7 +74,7 @@ public class NewBank {
 				return "Account name cannot be a number. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new Account(accountName,0));
+				customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -91,7 +94,41 @@ public class NewBank {
 				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
 				"NEWACCOUNT - Creates a new bank account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"TRANSFERFUNDS - Moves funds between your accounts; enter the command followed by the balance to " +
+				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
+	}
+
+	// transfers money between two accounts belonging to the same customer
+	private String transferFunds(CustomerID customer, String[] requestParams) {
+		// confirm that the correct number of parameters have been input
+		if(requestParams.length == 4) {
+			// confirm that input parameters are valid, and provide prompts to the user if not
+			String inputErrorPrompts = "";
+			double transferAmount = 0;
+			try {
+				transferAmount = Double.parseDouble(requestParams[1]);
+			} catch (NumberFormatException e) {
+				inputErrorPrompts += "Transfer amount, '" + requestParams[1] + "' is not valid.\n";
+			}
+			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
+			if(withdrawalAccount == null) {
+				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+			}
+			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[3]);
+			if(depositAccount == null) {
+				inputErrorPrompts += "Account for deposit, '" + requestParams[3] + "' does not exist.\n";
+			}
+			if(inputErrorPrompts.length() > 0) {
+				return inputErrorPrompts;
+			}
+			// transfer funds between the specified accounts
+			withdrawalAccount.withdrawFunds(transferAmount);
+			depositAccount.depositFunds(transferAmount);
+			return transferAmount + " transferred from " + withdrawalAccount.getName() + " to " +
+					depositAccount.getName();
+		}
+		return "Invalid entry. Try TRANSFERFUNDS <amount> <account to withraw from> <account to deposit to>";
 	}
 
 }
