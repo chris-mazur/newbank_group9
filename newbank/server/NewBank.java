@@ -57,7 +57,7 @@ public class NewBank {
 					return newAccount(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
-				case "TRANSFERFUNDS":
+				case "MOVE":
 					return transferFunds(customer, requestParams);
 				case "PAY":
 					return makePayment(customer, requestParams);
@@ -102,7 +102,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
 				"added, then the account name to deposit funds to.\n" +
-				"TRANSFERFUNDS - Moves funds between your accounts; enter the command followed by the balance to " +
+				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
 				"account to pay from, name of the payee, and the account name of the payee.\n" +
@@ -120,21 +120,22 @@ public class NewBank {
 				depositAmount = Double.parseDouble(requestParams[1]);
 				if(depositAmount <= 0) {
 					// a deposit amount must be positive
-					inputErrorPrompts += "Deposit amount, '" + requestParams[1] + "' is not valid.\n";
+					inputErrorPrompts += "Deposit amount '" + requestParams[1] + "' is not valid.\n";
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Deposit amount, '" + requestParams[1] + "' is not valid.\n";
+				inputErrorPrompts += "Deposit amount '" + requestParams[1] + "' is not valid.\n";
 			}
 			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(depositAccount == null) {
-				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
 			}
 			if(inputErrorPrompts.length() > 0) {
-				return inputErrorPrompts;
+				return "Deposit could not be made: \n" + inputErrorPrompts;
 			}
 			// deposit funds into the specified account
 			depositAccount.depositFunds(depositAmount);
-			return depositAmount + " deposited to " + depositAccount.getName();
+			return depositAmount + " deposited to " + depositAccount.getName() + "\n" + "Current balance in " +
+					depositAccount.toString();
 		} else {
 			return "Invalid entry. Try DEPOSIT <amount> <account name>";
 		}
@@ -147,25 +148,32 @@ public class NewBank {
 			// confirm that input parameters are valid, and provide prompts to the user if not
 			String inputErrorPrompts = "";
 			double transferAmount = 0;
+			boolean checkBalance = true;
 			try {
 				transferAmount = Double.parseDouble(requestParams[1]);
 				if(transferAmount <= 0) {
 					// a transfer amount must be positive
-					inputErrorPrompts += "Transfer amount, '" + requestParams[1] + "' is not valid.\n";
+					inputErrorPrompts += "Transfer amount '" + requestParams[1] + "' is not valid.\n";
+					checkBalance = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Transfer amount, '" + requestParams[1] + "' is not valid.\n";
+				inputErrorPrompts += "Transfer amount '" + requestParams[1] + "' is not valid.\n";
+				checkBalance = false;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
-				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
+				checkBalance = false;
 			}
 			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[3]);
 			if(depositAccount == null) {
-				inputErrorPrompts += "Account for deposit, '" + requestParams[3] + "' does not exist.\n";
+				inputErrorPrompts += "Account for deposit '" + requestParams[3] + "' does not exist.\n";
+			}
+			if(checkBalance && transferAmount > withdrawalAccount.getBalance()) {
+				inputErrorPrompts += "Insufficient funds in " + withdrawalAccount.toString();
 			}
 			if(inputErrorPrompts.length() > 0) {
-				return inputErrorPrompts;
+				return "Transfer could not be made: \n" + inputErrorPrompts;
 			}
 			// transfer funds between the specified accounts
 			withdrawalAccount.withdrawFunds(transferAmount);
@@ -183,28 +191,35 @@ public class NewBank {
 			// confirm that input parameters are valid, and provide prompts to the user if not
 			String inputErrorPrompts = "";
 			double paymentAmount = 0;
+			boolean checkBalance = true;
 			try {
 				paymentAmount = Double.parseDouble(requestParams[1]);
 				if(paymentAmount <= 0) {
 					// a transfer amount must be positive
-					inputErrorPrompts += "Payment amount, '" + requestParams[1] + "' is not valid.\n";
+					inputErrorPrompts += "Payment amount '" + requestParams[1] + "' is not valid.\n";
+					checkBalance = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Payment amount, '" + requestParams[1] + "' is not valid.\n";
+				inputErrorPrompts += "Payment amount '" + requestParams[1] + "' is not valid.\n";
+				checkBalance = false;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
-				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
+				checkBalance = false;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
 				// This doesn't work as expected (returns an infinite loop of "null")
-				// TODO - fixing the invalid username/password issue that is on Trello will likely solve this problem
+				// TODO - fixing the invalid username/password issue that is on Trello might solve this problem
 				inputErrorPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
 			}
 			Account payeeAccount = payee.getAccount(requestParams[4]);
 			if (payeeAccount == null) {
 				inputErrorPrompts += "Payee account, '" + requestParams[4] + "' does not exist.\n";
+			}
+			if(checkBalance && paymentAmount > withdrawalAccount.getBalance()) {
+				inputErrorPrompts += "Insufficient funds in " + withdrawalAccount.toString();
 			}
 			if(inputErrorPrompts.length() > 0) {
 				return "Payment could not be made:\n" + inputErrorPrompts;
