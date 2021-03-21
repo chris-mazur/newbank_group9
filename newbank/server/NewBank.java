@@ -53,6 +53,8 @@ public class NewBank {
 					return showMyAccounts(customer);
 				case "NEWACCOUNT":
 					return newAccount(customer, requestParams);
+				case "DEPOSIT":
+					return depositFunds(customer, requestParams);
 				case "TRANSFERFUNDS":
 					return transferFunds(customer, requestParams);
 				case "LOGOUT":
@@ -94,9 +96,38 @@ public class NewBank {
 				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
 				"NEWACCOUNT - Creates a new bank account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
+				"added, then the account name to deposit funds to.\n" +
 				"TRANSFERFUNDS - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
+	}
+
+	// deposits money into a specified account
+	private String depositFunds(CustomerID customer, String[] requestParams) {
+		// confirm that the correct number of parameters have been input
+		if(requestParams.length == 3) {
+			// confirm that input parameters are valid, and provide prompts to the user if not
+			String inputErrorPrompts = "";
+			double depositAmount = 0;
+			try {
+				depositAmount = Double.parseDouble(requestParams[1]);
+			} catch (NumberFormatException e) {
+				inputErrorPrompts += "Deposit amount, '" + requestParams[1] + "' is not valid.\n";
+			}
+			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
+			if(depositAccount == null) {
+				inputErrorPrompts += "Account for withdrawal, '" + requestParams[2] + "' does not exist.\n";
+			}
+			if(inputErrorPrompts.length() > 0) {
+				return inputErrorPrompts;
+			}
+			// deposit funds into the specified account
+			depositAccount.depositFunds(depositAmount);
+			return depositAmount + " deposited to " + depositAccount.getName();
+		} else {
+			return "Invalid entry. Try DEPOSIT <amount> <account name>";
+		}
 	}
 
 	// transfers money between two accounts belonging to the same customer
