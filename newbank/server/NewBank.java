@@ -42,6 +42,22 @@ public class NewBank {
 		return null;
 	}
 
+	public boolean usernameIsAvailable(String userName) {
+		if (customers.containsKey(userName)) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	public CustomerID createNewCustomer(String userName, String password) {
+		Customer c = new Customer();
+		c.setPassword(password);
+		customers.put(userName, c);
+		CustomerID id = new CustomerID(userName);
+		return id;
+	}
+
 	// commands from the NewBank customer are processed in this method
 	public synchronized String processRequest(CustomerID customer, String request) {
 
