@@ -81,60 +81,69 @@ public class NewBankClientHandler extends Thread {
         return bank.checkLogInDetails(userName, password);
     }
 
-    public void run() {
+    private void processUserRequests(CustomerID customer) {
         // keep getting requests from the client and processing them
         try {
-            boolean accountToLogIn = askDoesClientHaveAccount();
-            if (accountToLogIn) {
-                CustomerID customer = loginUser();
-                // if the user is authenticated then get requests from the user and process them
-                if (customer != null) {
-                    out.println("Log In Successful. What do you want to do?");
-                    while (true) {
-                        String request = in.readLine();
-                        System.out.println("Request from " + customer.getKey());
-                        String response = bank.processRequest(customer, request);
-                        if (response.equals("LOGOUT")) {
-                            out.println("Logging out...");
-                            break;
-                        }
-                        out.println(response);
-                    }
-                } else {
-                    out.println("Log In Failed");
+            while (true) {
+                String request = in.readLine();
+                System.out.println("Request from " + customer.getKey());
+                String response = bank.processRequest(customer, request);
+                if (response.equals("LOGOUT")) {
+                    out.println("Logging out...");
+                    break;
                 }
-            } else {
-                // ask for user name
-                out.println("Enter Username to create account");
-                String userName = in.readLine();
-                //make sure you aren't going to overwrite a previous customer
-                while(!bank.usernameIsAvailable(userName)) {
-                    out.println("Username already taken. Please choose a different username");
-                    userName = in.readLine();
-                }
-                // ask for password
-                out.println("Enter Password of length between 8 - 20 characters");
-                String password = in.readLine();
-                while (!passwordFollowsRules(password)) {
-                    out.println("Password could not be set. Please enter a password of length between 8 - 20 characters.");
-                    password = in.readLine();
-                }
-                CustomerID customer = bank.createNewCustomer(userName, password);
-                out.println( "Customer successfully created. What do you want to do next?");
-                while (true) {
-                    String request = in.readLine();
-                    System.out.println("Request from " + customer.getKey());
-                    String response = bank.processRequest(customer, request);
-                    if (response.equals("LOGOUT")) {
-                        out.println("Logging out...");
-                        break;
-                    }
-                    out.println(response);
-                }
+                out.println(response);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
+            out.println("We encountered an error. Please try again later.");
+            closeStreams();
+        }
+    }
+
+    private CustomerID createAccount() {
+        String userName = "";
+        String password = "";
+        try {
+            // ask for user name
+            out.println("Enter Username to create account");
+            userName = in.readLine();
+            //make sure you aren't going to overwrite a previous customer
+            while (!bank.usernameIsAvailable(userName)) {
+                out.println("Username already taken. Please choose a different username");
+                userName = in.readLine();
+            }
+            // ask for password
+            out.println("Enter Password of length between 8 - 20 characters");
+            password = in.readLine();
+            while (!passwordFollowsRules(password)) {
+                out.println("Password could not be set. Please enter a password of length between 8 - 20 characters.");
+                password = in.readLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            out.println("We encountered an error. Please try again later.");
+            closeStreams();
+        }
+        return bank.createNewCustomer(userName, password);
+    }
+
+    public void run() {
+        try {
+            boolean accountToLogIn = askDoesClientHaveAccount();
+            CustomerID customer;
+            if (accountToLogIn) {
+                customer = loginUser();
+            } else {
+                customer = createAccount();
+            }
+            // if the user is authenticated then get requests from the user and process them
+            if (customer != null) {
+                out.println("Success! What do you want to do next?");
+                processUserRequests(customer);
+            } else {
+                out.println("Failed");
+            }
         } finally {
             closeStreams();
         }
