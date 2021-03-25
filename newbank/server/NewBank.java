@@ -15,17 +15,17 @@ public class NewBank {
 	}
 	
 	private void addTestData() {
-		Customer bhagy = new Customer();
+		Customer bhagy = new Customer("bhagy1234");
 		bhagy.addAccount(new Account("Main", 1000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		
-		Customer christina = new Customer();
+		Customer christina = new Customer("christina5678");
 		christina.addAccount(new Account("Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
-		Customer john = new Customer();
+		Customer john = new Customer("john9999");
 		john.addAccount(new Account("Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
@@ -34,7 +34,11 @@ public class NewBank {
 	public static NewBank getBank() {
 		return bank;
 	}
-	
+
+	public void setUserPassword(Customer c, String password) {
+		c.setPassword(password);
+	}
+
 	public synchronized CustomerID checkLogInDetails(String userName, String password) {
 		if(customers.containsKey(userName) && (customers.get(userName).getPassword().equals(password))) {
 			return new CustomerID(userName);
@@ -43,16 +47,11 @@ public class NewBank {
 	}
 
 	public boolean usernameIsAvailable(String userName) {
-		if (customers.containsKey(userName)) {
-			return false;
-		} else {
-			return true;
-		}
+		return !customers.containsKey(userName);
 	}
 
 	public CustomerID createNewCustomer(String userName, String password) {
-		Customer c = new Customer();
-		c.setPassword(password);
+		Customer c = new Customer(password);
 		customers.put(userName, c);
 		CustomerID id = new CustomerID(userName);
 		return id;

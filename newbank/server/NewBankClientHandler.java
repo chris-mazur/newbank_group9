@@ -78,7 +78,8 @@ public class NewBankClientHandler extends Thread {
             out.println("We encountered an error. Please try again later.");
             closeStreams();
         }
-        return bank.checkLogInDetails(userName, password);
+        CustomerID id = bank.checkLogInDetails(userName, password);
+        return id;
     }
 
     private void processUserRequests(CustomerID customer) {
@@ -131,19 +132,20 @@ public class NewBankClientHandler extends Thread {
     public void run() {
         try {
             boolean accountToLogIn = askDoesClientHaveAccount();
-            CustomerID customer;
+            CustomerID customer = null;
+            while (customer == null) {
             if (accountToLogIn) {
                 customer = loginUser();
             } else {
                 customer = createAccount();
             }
-            // if the user is authenticated then get requests from the user and process them
-            if (customer != null) {
-                out.println("Success! What do you want to do next?");
-                processUserRequests(customer);
-            } else {
+            if (customer == null) {
                 out.println("Failed");
             }
+            }
+            // if the user is authenticated then get requests from the user and process them
+            out.println("Success! What do you want to do next?");
+            processUserRequests(customer);
         } finally {
             closeStreams();
         }

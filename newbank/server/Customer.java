@@ -7,8 +7,9 @@ public class Customer {
 	private ArrayList<Account> accounts;
 	private String password;
 	
-	public Customer() {
+	public Customer(String password) {
 		accounts = new ArrayList<>();
+		setPassword(password);
 	}
 	
 	public String accountsToString() {
@@ -23,6 +24,10 @@ public class Customer {
 			s += a.toString();
 		}
 		return s;
+	}
+
+	public boolean hasPassword() {
+		return password != null;
 	}
 
 	public void setPassword(String newPassword) {
