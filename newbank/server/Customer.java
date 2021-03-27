@@ -26,6 +26,15 @@ public class Customer {
 		return s;
 	}
 
+	public String accountBalance(String accName) {
+		for(Account a:accounts) {
+			if(a.getName() == accName) {
+				return Double.toString(a.getBalance());
+			}
+		}
+		return "Account does not exist";
+	}
+
 	public boolean hasPassword() {
 		return password != null;
 	}
