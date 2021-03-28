@@ -6,11 +6,11 @@ import java.lang.Double;
 import java.lang.Integer;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.ArrayList;
 
 public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
+	private static final int lenderLoanLimit = 3;
 	private HashMap<String,Customer> customers;
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
 	private HashMap<String, Loan> loanMarketPlace; // place to store loans before people take them
@@ -292,17 +292,21 @@ public class NewBank {
 				inputParametersValid = false;
 			}
 			if (inputParametersValid) {
-				// create a new loan
-				Loan newLoan = new Loan(lendingAccount, lendingAmount, setupDate, lendingDuration);
-				// add loan to customer account
-				//customer.addLendingLoan(newLoan);
-				// add loan to marketplace
-				loanMarketPlace.put(newLoan.getLoanID(), newLoan);
-				// confirm that loan has been set up
-				return "The following loan has been set up:\n" + newLoan.displayDetails();
-			} else {
-				return "Loan could not be set up:\n" + inputErrorPrompts;
+				if (customer.numLoansOffered() < lenderLoanLimit) {
+					// create a new loan
+					Loan newLoan = new Loan(lendingAccount, lendingAmount, setupDate, lendingDuration);
+					// add loan to customer account
+					customer.offerLoan(newLoan);
+					// add loan to marketplace
+					loanMarketPlace.put(newLoan.getLoanID(), newLoan);
+					// confirm that loan has been set up
+					return "The following loan has been set up:\n" + newLoan.displayDetails();
+				} else {
+					inputErrorPrompts += "The maximum number of loans you can offer is " + lenderLoanLimit + ". " +
+							"Your current loans are:\n" + customer.showLoansOffered();
+				}
 			}
+			return "Loan could not be set up:\n" + inputErrorPrompts;
 		}
 		return "Invalid entry. Try LEND <amount to lend> <account to lend from> <duration to lend for (weeks)>";
 	}

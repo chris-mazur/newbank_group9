@@ -5,10 +5,12 @@ import java.util.ArrayList;
 public class Customer {
 	
 	private ArrayList<Account> accounts;
+	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans offered to other customers
 	private String password;
 	
 	public Customer() {
 		accounts = new ArrayList<>();
+		currentLoansOffered = new ArrayList<>();
 	}
 	
 	public String accountsToString() {
@@ -47,5 +49,23 @@ public class Customer {
 		return null;
 	}
 
+	// add a loan to the customer account in which the customer is the lender
+	public void offerLoan(Loan newLoan) {
+		currentLoansOffered.add(newLoan);
+	}
+
+	// return the number of loans currently offered by the customer
+	public int numLoansOffered() {
+		return currentLoansOffered.size();
+	}
+
+	// display details about the loans currently offered by the customer
+	public String showLoansOffered() {
+		String loanList = "";
+		for (Loan loan : currentLoansOffered) {
+			loanList += loan.displayDetails() + "\n";
+		}
+		return loanList;
+	}
 
 }
