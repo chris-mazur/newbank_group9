@@ -131,21 +131,23 @@ public class NewBankClientHandler extends Thread {
 
     public void run() {
         try {
-            boolean accountToLogIn = askDoesClientHaveAccount();
-            CustomerID customer = null;
-            while (customer == null) {
-            if (accountToLogIn) {
-                customer = loginUser();
-            } else {
-                customer = createAccount();
-            }
-            if (customer == null) {
-                out.println("Failed");
-            }
-            }
-            // if the user is authenticated then get requests from the user and process them
-            out.println("Success! What do you want to do next?");
-            processUserRequests(customer);
+            while(true) { // Loop when the client breaks out of the processUserRequests method, resetting the run() process
+                boolean accountToLogIn = askDoesClientHaveAccount();
+                CustomerID customer = null;
+                while (customer == null) {
+                if (accountToLogIn) {
+                    customer = loginUser();
+                } else {
+                    customer = createAccount();
+                }
+                if (customer == null) {
+                    out.println("Failed");
+                }
+                }
+                // if the user is authenticated then get requests from the user and process them
+                out.println("Success! What do you want to do next?");
+                processUserRequests(customer);
+            }  
         } finally {
             closeStreams();
         }
