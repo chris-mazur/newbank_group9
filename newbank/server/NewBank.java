@@ -13,10 +13,11 @@ public class NewBank {
 	private static final NewBank bank = new NewBank();
 	private HashMap<String,Customer> customers;
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
-	private ArrayList<Loan> loanMarketPlace; // place to store loans before people take them
+	private HashMap<String, Loan> loanMarketPlace; // place to store loans before people take them
 
 	private NewBank() {
 		customers = new HashMap<>();
+		loanMarketPlace = new HashMap<>();
 		addTestData();
 	}
 	
@@ -296,7 +297,7 @@ public class NewBank {
 				// add loan to customer account
 				//customer.addLendingLoan(newLoan);
 				// add loan to marketplace
-				//loanMarketPlace.add(newLoan);
+				loanMarketPlace.put(newLoan.getLoanID(), newLoan);
 				// confirm that loan has been set up
 				return "The following loan has been set up:\n" + newLoan.displayDetails();
 			} else {
@@ -308,7 +309,15 @@ public class NewBank {
 
 	// shows all loans available at the bank
 	private String showLoans() {
-		return "SHOWLOANS - NOT IMPLEMENTED YET";
+		String loanList = "";
+		for (Loan loan : loanMarketPlace.values()) {
+			loanList += loan.displayDetails() + "\n";
+		}
+		if (loanList.length() == 0) {
+			return "No loans currently available.";
+		} else {
+			return loanList;
+		}
 	}
 
 	// allows a customer to take out a loan

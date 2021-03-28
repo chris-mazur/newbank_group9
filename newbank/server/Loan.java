@@ -49,6 +49,11 @@ public class Loan {
         return loanID + ": " + principalAmount + " at " + interestRate + "% for " + remainingDuration + " weeks.";
     }
 
+    // return the loanID
+    public String getLoanID() {
+        return loanID;
+    }
+
     // display status of the loan for the lender
 
     // display status of the loan for the borrower
