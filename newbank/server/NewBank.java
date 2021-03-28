@@ -95,11 +95,17 @@ public class NewBank {
 				return "Account name cannot be a number. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
+				newCurrentAccount(customer, requestParams);
+				//customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
 		return "Invalid entry. Try NEWACCOUNT <account name>";
+	}
+
+	// Create an account for a customer. Used in NewBank.newAccount and NewBankClientHandler.createUserAndAccount() 
+	public void newCurrentAccount(CustomerID customer, String[] requestParams) {
+		customers.get(customer.getKey()).addAccount(new Account(requestParams[1],0.00));
 	}
 
 	//method to check if a String is Numeric. Useful when checking user input

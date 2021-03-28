@@ -129,6 +129,14 @@ public class NewBankClientHandler extends Thread {
         return bank.createNewCustomer(userName, password);
     }
 
+    private CustomerID createUserAndAccount() {
+        CustomerID user = createAccount();
+        String[] accName = {"NEWACCOUNT","current"};
+        bank.newCurrentAccount(user, accName);
+
+        return user;
+    }
+
     public void run() {
         try {
             while(true) { // Loop when the client breaks out of the processUserRequests method, resetting the run() process
@@ -138,7 +146,7 @@ public class NewBankClientHandler extends Thread {
                 if (accountToLogIn) {
                     customer = loginUser();
                 } else {
-                    customer = createAccount();
+                    customer = createUserAndAccount();
                 }
                 if (customer == null) {
                     out.println("Failed");
