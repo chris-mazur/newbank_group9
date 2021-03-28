@@ -3,11 +3,14 @@ package newbank.server;
 import java.util.HashMap;
 import java.util.regex.*;
 import java.lang.Double;
+import java.util.Calendar;
+import java.util.Date;
 
 public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
 	private HashMap<String,Customer> customers;
+	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
 
 	private NewBank() {
 		customers = new HashMap<>();
@@ -61,6 +64,8 @@ public class NewBank {
 					return transferFunds(customer, requestParams);
 				case "PAY":
 					return makePayment(customer, requestParams);
+				case "TIMETRAVEL": // for testing purposes
+					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
@@ -106,6 +111,7 @@ public class NewBank {
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
 				"account to pay from, name of the payee, and the account name of the payee.\n" +
+				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
@@ -231,6 +237,29 @@ public class NewBank {
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
+	}
+
+	// skips ahead by a specified number of days to a future date in the bank's calendar
+	private String timeTravel(String[] requestParams) {
+		// confirm that the parameter entered is valid (must be a positive integer)
+		if(requestParams.length == 2 && isNumeric(requestParams[1])) {
+			try {
+				int days = Integer.parseInt(requestParams[1]);
+				if(days >= 0) {
+					// update the calendar date and provide confirmation of time travel
+					Date departureDate = calendar.getTime();
+					calendar.add(calendar.DATE, days);
+					Date arrivalDate = calendar.getTime();
+					return "Travelled forward " + days + " days from " + departureDate + " to " + arrivalDate;
+
+				} else {
+					return "Invalid entry. The number of days must be positive.";
+				}
+			} catch (NumberFormatException e) {
+				return "Invalid entry. The number of days must be an integer.";
+			}
+		}
+		return "Invalid entry. Try TIMETRAVEL <number of days into the future>";
 	}
 
 }
