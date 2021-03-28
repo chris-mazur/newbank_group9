@@ -199,10 +199,21 @@ public class NewBank {
 			// transfer funds between the specified accounts
 			withdrawalAccount.withdrawFunds(transferAmount);
 			depositAccount.depositFunds(transferAmount);
+			
 			return transferAmount + " transferred from " + withdrawalAccount.getName() + " to " +
-					depositAccount.getName();
+					depositAccount.getName() + displayChangedAccounts(customer,withdrawalAccount,depositAccount);
 		}
 		return "Invalid entry. Try MOVE <amount> <account to withraw from> <account to deposit to>";
+	}
+	
+	private String displayChangedAccounts(CustomerID customer, Account withdrawalAccount, Account depositAccount) {
+		String response;
+		response = "\nNew balances:\n";
+		String accName = withdrawalAccount.getName();
+		response += "Account name: " + accName + " Balance: " + customers.get(customer.getKey()).accountBalance(accName);
+		accName = depositAccount.getName();
+		response += "\nAccount name: " + accName + " Balance: " + customers.get(customer.getKey()).accountBalance(accName);
+		return response;
 	}
 
 	// makes a payment to another customer in the same bank
