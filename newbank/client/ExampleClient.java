@@ -25,6 +25,10 @@ public class ExampleClient extends Thread{
 				try {
 					while(true) {
 						String response = bankServerIn.readLine();
+						if(response == null) { // If no resposne 
+							System.out.println("Server error.");
+							break;
+						}
 						System.out.println(response);
 					}
 				} catch (IOException e) {
