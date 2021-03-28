@@ -3,14 +3,17 @@ package newbank.server;
 import java.util.HashMap;
 import java.util.regex.*;
 import java.lang.Double;
+import java.lang.Integer;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.ArrayList;
 
 public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
 	private HashMap<String,Customer> customers;
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
+	private ArrayList<Loan> loanMarketPlace; // place to store loans before people take them
 
 	private NewBank() {
 		customers = new HashMap<>();
@@ -55,7 +58,7 @@ public class NewBank {
 				case "HELP":
 					return showHelp();
 				case "SHOWMYACCOUNTS":
-					return showMyAccounts(customer);
+					return showMyAccounts(customer); // this should also show money lent and borrowed
 				case "NEWACCOUNT":
 					return newAccount(customer, requestParams);
 				case "DEPOSIT":
@@ -64,18 +67,27 @@ public class NewBank {
 					return transferFunds(customer, requestParams);
 				case "PAY":
 					return makePayment(customer, requestParams);
+				case "LEND":
+					return lendMoney(customer, requestParams, calendar.getTime());
+				case "LOANS":
+					return showLoans();
+				case "BORROW":
+					return borrowMoney(customer, requestParams); // loanID
+				case "REPAYMENT":
+					return loanRepayment(customer, requestParams); // loanID, repayment amount
 				case "TIMETRAVEL": // for testing purposes
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
-					return "FAIL";
+					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
 		}
 		return "FAIL";
 	}
 
 	private String showMyAccounts(CustomerID customer) {
+		// TODO - modify to also display lending and borrowing
 		return (customers.get(customer.getKey())).accountsToString();
 	}
 
@@ -237,6 +249,76 @@ public class NewBank {
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
+	}
+
+	// set up a loan and add it to the loans marketplace
+	private String lendMoney(CustomerID customerID, String[] requestParams, Date setupDate) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the parameters entered are valid, and provide prompts to the user if not
+		String inputErrorPrompts = "";
+		double lendingAmount = 0;
+		int lendingDuration = 0;
+		boolean inputParametersValid = true;
+		if (requestParams.length == 4) {
+			try {
+				lendingAmount = Double.parseDouble(requestParams[1]);
+				if (lendingAmount <= 0) {
+					// a lending amount must be positive
+					inputErrorPrompts += "Lending amount '" + requestParams[1] + "' is not valid.\n";
+					inputParametersValid = false;
+				}
+			} catch (NumberFormatException e) {
+				inputErrorPrompts += "Lending amount '" + requestParams[1] + "' is not valid.\n";
+				inputParametersValid = false;
+			}
+			Account lendingAccount = customer.getAccount(requestParams[2]);
+			if (lendingAccount == null) {
+				inputErrorPrompts += "Account to lend from '" + requestParams[2] + "' does not exist.\n";
+				inputParametersValid = false;
+			} else if (lendingAccount.getBalance() < lendingAmount) {
+				inputErrorPrompts += "Insufficient funds in " + lendingAccount.toString() + "\n";
+				inputParametersValid = false;
+			}
+			try {
+				lendingDuration = Integer.parseInt(requestParams[3]);
+				if (lendingDuration <= 0) {
+					// a lending duration must be positive
+					inputErrorPrompts += "Lending duration '" + requestParams[3] + "' is not valid.\n";
+					inputParametersValid = false;
+				}
+			} catch (NumberFormatException e) {
+				inputErrorPrompts += "Lending duration '" + requestParams[3] + "' is not valid.\n";
+				inputParametersValid = false;
+			}
+			if (inputParametersValid) {
+				// create a new loan
+				Loan newLoan = new Loan(lendingAccount, lendingAmount, setupDate, lendingDuration);
+				// add loan to customer account
+				//customer.addLendingLoan(newLoan);
+				// add loan to marketplace
+				//loanMarketPlace.add(newLoan);
+				// confirm that loan has been set up
+				return "The following loan has been set up:\n" + newLoan.displayDetails();
+			} else {
+				return "Loan could not be set up:\n" + inputErrorPrompts;
+			}
+		}
+		return "Invalid entry. Try LEND <amount to lend> <account to lend from> <duration to lend for (weeks)>";
+	}
+
+	// shows all loans available at the bank
+	private String showLoans() {
+		return "SHOWLOANS - NOT IMPLEMENTED YET";
+	}
+
+	// allows a customer to take out a loan
+	private String borrowMoney(CustomerID customer, String[] requestParams) {
+		return "BORROW - NOT IMPLEMENTED YET";
+	}
+
+	// allows a customer to make a repayment on their loan
+	private String loanRepayment(CustomerID customer, String[] requestParams) {
+		return "REPAYMENT - NOT IMPLEMENTED YET";
 	}
 
 	// skips ahead by a specified number of days to a future date in the bank's calendar
