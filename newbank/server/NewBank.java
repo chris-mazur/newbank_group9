@@ -8,11 +8,17 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class NewBank {
-	
+
+	// bank instance
 	private static final NewBank bank = new NewBank();
-	private static final int lenderLoanLimit = 3;
-	private static final int borrowerLoanLimit = 3;
-	private HashMap<String,Customer> customers;
+
+	// parameters set by the bank
+	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
+	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
+	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+
+	// data structures for bank
+	private HashMap<String,Customer> customers; // place to store all customer data
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
 	private HashMap<String, Loan> loanMarketPlace; // place to store loans before people take them
 
@@ -329,21 +335,35 @@ public class NewBank {
 	private String borrowMoney(CustomerID customerID, String[] requestParams) {
 		Customer customer = customers.get(customerID.getKey());
 		// confirm that the parameters are valid, and provide prompts to the user if not
-		String inputErrorPrompts = "";
+		String userPrompts = "";
 		boolean inputParametersValid = true;
 		if (requestParams.length == 3) {
 			if (!loanMarketPlace.containsKey(requestParams[1])) {
-				inputErrorPrompts += "Loan ID '" + requestParams[1] + "' is not valid.\n";
+				userPrompts += "Loan ID '" + requestParams[1] + "' is not valid.\n";
 				inputParametersValid = false;
 			}
 			Account borrowingAccount = customer.getAccount(requestParams[2]);
 			if (borrowingAccount == null) {
-				inputErrorPrompts += "Account to pay loan into '" + requestParams[2] + "' does not exist.\n";
+				userPrompts += "Account to pay loan into '" + requestParams[2] + "' does not exist.\n";
 				inputParametersValid = false;
 			}
 			if (inputParametersValid) {
-				if (customer.numLoansReceived() < borrowerLoanLimit) {
-					Loan loan = loanMarketPlace.get(requestParams[1]);
+				// perform eligibility checks for the loan, and provide prompts to the user if criteria are not met
+				Loan loan = loanMarketPlace.get(requestParams[1]);
+				boolean eligibleForLoan = true;
+				// perform eligibility checks
+				if (loan.getLoanValue() > (customer.getTotalFunds() * borrowerLoanSizeLimit)) {
+					userPrompts += "The maximum size of loan you are eligible for is " +
+							(borrowerLoanSizeLimit * customer.getTotalFunds()) + " (" +
+							borrowerLoanSizeLimit + " times the total amount of money held in your accounts).\n";
+					eligibleForLoan = false;
+				}
+				if (customer.numLoansReceived() == borrowerLoanLimit) {
+					userPrompts += "The maximum number of loans you can get is " + borrowerLoanLimit + ". " +
+							"Your current loans are:\n" + customer.showLoansReceived();
+					eligibleForLoan = false;
+				}
+				if (eligibleForLoan) {
 					// accept loan and transfer funds to the borrowing account
 					loan.acceptLoan(borrowingAccount);
 					// add loan to customer account
@@ -353,11 +373,10 @@ public class NewBank {
 					// confirm that loan has been successfully received
 					return "The following loan has been received:\n" + loan.displayDetails();
 				} else {
-					inputErrorPrompts += "The maximum number of loans you can get is " + borrowerLoanLimit + ". " +
-							"Your current loans are:\n" + customer.showLoansReceived();
+					return "You are not eligible for this loan:\n" + userPrompts;
 				}
 			}
-			return "Unable to take out loan:\n" + inputErrorPrompts;
+			return "Unable to take out loan:\n" + userPrompts;
 		}
 		return "Invalid entry. Try BORROW <loan ID> <account to pay into>";
 	}

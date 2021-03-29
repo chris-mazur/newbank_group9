@@ -54,6 +54,11 @@ public class Loan {
         return loanID;
     }
 
+    // return the loan value
+    public double getLoanValue() {
+        return principalAmount;
+    }
+
     // display status of the loan for the lender
 
     // display status of the loan for the borrower

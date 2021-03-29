@@ -41,6 +41,15 @@ public class Customer {
 		accounts.add(account);		
 	}
 
+	// return the total amount of money held across all of the customer's accounts
+	public double getTotalFunds() {
+		double totalFunds = 0;
+		for (Account account : accounts) {
+			totalFunds += account.getBalance();
+		}
+		return totalFunds;
+	}
+
 	// return a requested customer account if it exists (or null if not)
 	public Account getAccount(String accountName) {
 		for(Account account : accounts) {
