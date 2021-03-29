@@ -74,7 +74,7 @@ public class Customer {
 	public String showLoansOffered() {
 		String loanList = "";
 		for (Loan loan : currentLoansOffered) {
-			loanList += loan.displayDetails() + "\n";
+			loanList += loan.displayLenderDetails() + "\n";
 		}
 		return loanList;
 	}
@@ -93,9 +93,19 @@ public class Customer {
 	public String showLoansReceived() {
 		String loanList = "";
 		for (Loan loan : currentLoansReceived) {
-			loanList += loan.displayDetails() + "\n";
+			loanList += loan.displayBorrowerDetails() + "\n";
 		}
 		return loanList;
+	}
+
+	// retrieves a loan that the customer has taken out
+	public Loan getLoan(String loanID) {
+		for (Loan loan : currentLoansReceived) {
+			if (loan.getLoanID().equals(loanID)) {
+				return loan;
+			}
+		}
+		return null;
 	}
 
 }

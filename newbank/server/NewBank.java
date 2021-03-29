@@ -81,7 +81,7 @@ public class NewBank {
 					return showLoans();
 				case "BORROW":
 					return borrowMoney(customer, requestParams); // loanID
-				case "REPAYMENT":
+				case "REPAY":
 					return loanRepayment(customer, requestParams); // loanID, repayment amount
 				case "TIMETRAVEL": // for testing purposes
 					return timeTravel(requestParams);
@@ -301,7 +301,7 @@ public class NewBank {
 			if (inputParametersValid) {
 				if (customer.numLoansOffered() < lenderLoanLimit) {
 					// create a new loan
-					Loan newLoan = new Loan(lendingAccount, lendingAmount, setupDate, lendingDuration);
+					Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration);
 					// add loan to customer account
 					customer.offerLoan(newLoan);
 					// add loan to marketplace
@@ -365,7 +365,7 @@ public class NewBank {
 				}
 				if (eligibleForLoan) {
 					// accept loan and transfer funds to the borrowing account
-					loan.acceptLoan(borrowingAccount);
+					loan.acceptLoan(borrowingAccount, calendar.getTime());
 					// add loan to customer account
 					customer.receiveLoan(loan);
 					// remove loan from marketplace
@@ -382,8 +382,57 @@ public class NewBank {
 	}
 
 	// allows a customer to make a repayment on their loan
-	private String loanRepayment(CustomerID customer, String[] requestParams) {
-		return "REPAYMENT - NOT IMPLEMENTED YET";
+	private String loanRepayment(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the parameters entered are valid, and provide prompts to the user if not
+		String userPrompts = "";
+		double repaymentAmount = 0;
+		boolean inputParametersValid = true;
+		if (requestParams.length == 4) {
+			Loan loanToRepay = customer.getLoan(requestParams[1]);
+			if (loanToRepay == null) {
+				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
+				inputParametersValid = false;
+			}
+			try {
+				repaymentAmount = Double.parseDouble(requestParams[2]);
+				if (repaymentAmount <= 0) {
+					userPrompts += "\nRepayment amount '" + requestParams[2] + "' must be positive.";
+					inputParametersValid = false;
+				}
+			} catch (NumberFormatException e) {
+				userPrompts += "\nRepayment amount '" + requestParams[2] + "' is not valid.";
+				inputParametersValid = false;
+			}
+			Account repaymentAccount = customer.getAccount(requestParams[3]);
+			if (repaymentAccount == null) {
+				userPrompts += "\nAccount to repay from '" + requestParams[3] + "' does not exist.";
+				inputParametersValid = false;
+			}
+			if (inputParametersValid) {
+				// check that there are sufficient funds to make the repayment
+				if (repaymentAccount.getBalance() < repaymentAmount) {
+					userPrompts += "\nInsufficient funds to make repayment from " + repaymentAccount.toString();
+					inputParametersValid = false;
+				}
+				// check that the repayment does not exceed the remaining balance on the loan
+				double outstandingBalance = loanToRepay.getRepaymentAmount(calendar.getTime());
+				if (repaymentAmount > outstandingBalance) {
+					userPrompts += "\nRepayment exceeds outstanding balance on loan: " + outstandingBalance;
+					inputParametersValid = false;
+				}
+				if (inputParametersValid) {
+					// make the repayment
+					loanToRepay.makeRepayment(calendar.getTime(), repaymentAmount, repaymentAccount);
+					outstandingBalance = loanToRepay.getRepaymentAmount(calendar.getTime());
+					return "Repayment of " + repaymentAmount + " made to " + loanToRepay.getLoanID() + ". " +
+							"Outstanding balance is now " + outstandingBalance;
+				}
+				return "Unable to make repayment on loan:" + userPrompts;
+			}
+			return "Unable to make repayment on loan:" + userPrompts;
+		}
+		return "Invalid entry. Try REPAY <Loan ID> <amount to repay> <account to pay from>";
 	}
 
 	// skips ahead by a specified number of days to a future date in the bank's calendar
