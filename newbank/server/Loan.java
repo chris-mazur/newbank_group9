@@ -59,6 +59,13 @@ public class Loan {
     // display status of the loan for the borrower
 
     // a customer who wishes to borrow money can accept a loan
+    public void acceptLoan(Account borrowingAccount) {
+        this.borrowingAccount = borrowingAccount;
+        loanActive = true;
+        // transfer loan to account
+        borrowingAccount.depositFunds(principalAmount);
+    }
+
 
     // borrower can make a loan repayment
 

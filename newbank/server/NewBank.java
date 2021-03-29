@@ -11,6 +11,7 @@ public class NewBank {
 	
 	private static final NewBank bank = new NewBank();
 	private static final int lenderLoanLimit = 3;
+	private static final int borrowerLoanLimit = 3;
 	private HashMap<String,Customer> customers;
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
 	private HashMap<String, Loan> loanMarketPlace; // place to store loans before people take them
@@ -325,8 +326,40 @@ public class NewBank {
 	}
 
 	// allows a customer to take out a loan
-	private String borrowMoney(CustomerID customer, String[] requestParams) {
-		return "BORROW - NOT IMPLEMENTED YET";
+	private String borrowMoney(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the parameters are valid, and provide prompts to the user if not
+		String inputErrorPrompts = "";
+		boolean inputParametersValid = true;
+		if (requestParams.length == 3) {
+			if (!loanMarketPlace.containsKey(requestParams[1])) {
+				inputErrorPrompts += "Loan ID '" + requestParams[1] + "' is not valid.\n";
+				inputParametersValid = false;
+			}
+			Account borrowingAccount = customer.getAccount(requestParams[2]);
+			if (borrowingAccount == null) {
+				inputErrorPrompts += "Account to pay loan into '" + requestParams[2] + "' does not exist.\n";
+				inputParametersValid = false;
+			}
+			if (inputParametersValid) {
+				if (customer.numLoansReceived() < borrowerLoanLimit) {
+					Loan loan = loanMarketPlace.get(requestParams[1]);
+					// accept loan and transfer funds to the borrowing account
+					loan.acceptLoan(borrowingAccount);
+					// add loan to customer account
+					customer.receiveLoan(loan);
+					// remove loan from marketplace
+					loanMarketPlace.remove(loan.getLoanID());
+					// confirm that loan has been successfully received
+					return "The following loan has been received:\n" + loan.displayDetails();
+				} else {
+					inputErrorPrompts += "The maximum number of loans you can get is " + borrowerLoanLimit + ". " +
+							"Your current loans are:\n" + customer.showLoansReceived();
+				}
+			}
+			return "Unable to take out loan:\n" + inputErrorPrompts;
+		}
+		return "Invalid entry. Try BORROW <loan ID> <account to pay into>";
 	}
 
 	// allows a customer to make a repayment on their loan
