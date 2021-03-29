@@ -94,9 +94,20 @@ public class NewBank {
 		return "FAIL";
 	}
 
-	private String showMyAccounts(CustomerID customer) {
-		// TODO - modify to also display lending and borrowing
-		return (customers.get(customer.getKey())).accountsToString();
+	// displays information about all accounts and loans held by the customer
+	private String showMyAccounts(CustomerID customerID) {
+		Customer customer = customers.get(customerID.getKey());
+		String accountData = "Accounts\n--------\n";
+		accountData += customer.accountsToString();
+		if (customer.numLoansOffered() > 0) {
+			accountData += "\n-------------\nLoans Offered\n-------------" +
+					customer.showLoansOffered(calendar.getTime());
+		}
+		if (customer.numLoansReceived() > 0) {
+			accountData += "\n--------------\nLoans Received\n--------------" +
+					customer.showLoansReceived(calendar.getTime());
+		}
+		return accountData;
 	}
 
 	private String newAccount(CustomerID customer, String[] requestParams) {
@@ -131,6 +142,13 @@ public class NewBank {
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
 				"account to pay from, name of the payee, and the account name of the payee.\n" +
+				"LEND - Lend money directly to other members of the bank; enter the command followed by the amount " +
+				" to lend, the account to pay from, and the duration (in weeks) to make the money available for.\n" +
+				"LOANS - Displays a list of all loans that are currently available.\n" +
+				"BORROW - Apply for a loan; enter the command followed by the name of the loan and the name of the " +
+				"account you would like the money to be paid into.\n" +
+				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
+				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
@@ -140,23 +158,23 @@ public class NewBank {
 		// confirm that the correct number of parameters have been input
 		if(requestParams.length == 3) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
-			String inputErrorPrompts = "";
+			String userPrompts = "";
 			double depositAmount = 0;
 			try {
 				depositAmount = Double.parseDouble(requestParams[1]);
 				if(depositAmount <= 0) {
 					// a deposit amount must be positive
-					inputErrorPrompts += "Deposit amount '" + requestParams[1] + "' is not valid.\n";
+					userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Deposit amount '" + requestParams[1] + "' is not valid.\n";
+				userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
 			}
 			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(depositAccount == null) {
-				inputErrorPrompts += "Account for deposit '" + requestParams[2] + "' does not exist.\n";
+				userPrompts += "\nAccount for deposit '" + requestParams[2] + "' does not exist.";
 			}
-			if(inputErrorPrompts.length() > 0) {
-				return "Deposit could not be made: \n" + inputErrorPrompts;
+			if(userPrompts.length() > 0) {
+				return "Deposit could not be made:" + userPrompts;
 			}
 			// deposit funds into the specified account
 			depositAccount.depositFunds(depositAmount);
@@ -172,34 +190,34 @@ public class NewBank {
 		// confirm that the correct number of parameters have been input
 		if(requestParams.length == 4) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
-			String inputErrorPrompts = "";
+			String userPrompts = "";
 			double transferAmount = 0;
-			boolean checkBalance = true;
+			boolean inputsValid = true;
 			try {
 				transferAmount = Double.parseDouble(requestParams[1]);
 				if(transferAmount <= 0) {
 					// a transfer amount must be positive
-					inputErrorPrompts += "Transfer amount '" + requestParams[1] + "' is not valid.\n";
-					checkBalance = false;
+					userPrompts += "\nTransfer amount '" + requestParams[1] + "' is not valid.";
+					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Transfer amount '" + requestParams[1] + "' is not valid.\n";
-				checkBalance = false;
+				userPrompts += "\nTransfer amount '" + requestParams[1] + "' is not valid.";
+				inputsValid = false;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
-				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
-				checkBalance = false;
+				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
 			}
 			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[3]);
 			if(depositAccount == null) {
-				inputErrorPrompts += "Account for deposit '" + requestParams[3] + "' does not exist.\n";
+				userPrompts += "\nAccount for deposit '" + requestParams[3] + "' does not exist.";
 			}
-			if(checkBalance && transferAmount > withdrawalAccount.getBalance()) {
-				inputErrorPrompts += "Insufficient funds in " + withdrawalAccount.toString();
+			if(inputsValid && transferAmount > withdrawalAccount.getBalance()) {
+				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
 			}
-			if(inputErrorPrompts.length() > 0) {
-				return "Transfer could not be made: \n" + inputErrorPrompts;
+			if(userPrompts.length() > 0) {
+				return "Transfer could not be made:" + userPrompts;
 			}
 			// transfer funds between the specified accounts
 			withdrawalAccount.withdrawFunds(transferAmount);
@@ -215,40 +233,40 @@ public class NewBank {
 		// confirm that the correct number of parameters have been input
 		if(requestParams.length == 5) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
-			String inputErrorPrompts = "";
+			String userPrompts = "";
 			double paymentAmount = 0;
-			boolean checkBalance = true;
+			boolean inputsValid = true;
 			try {
 				paymentAmount = Double.parseDouble(requestParams[1]);
 				if(paymentAmount <= 0) {
 					// a transfer amount must be positive
-					inputErrorPrompts += "Payment amount '" + requestParams[1] + "' is not valid.\n";
-					checkBalance = false;
+					userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
+					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Payment amount '" + requestParams[1] + "' is not valid.\n";
-				checkBalance = false;
+				userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
+				inputsValid = false;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
-				inputErrorPrompts += "Account for withdrawal '" + requestParams[2] + "' does not exist.\n";
-				checkBalance = false;
+				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
 				// This doesn't work as expected (returns an infinite loop of "null")
 				// TODO - fixing the invalid username/password issue that is on Trello might solve this problem
-				inputErrorPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
+				userPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
 			}
 			Account payeeAccount = payee.getAccount(requestParams[4]);
 			if (payeeAccount == null) {
-				inputErrorPrompts += "Payee account, '" + requestParams[4] + "' does not exist.\n";
+				userPrompts += "\nPayee account, '" + requestParams[4] + "' does not exist.";
 			}
-			if(checkBalance && paymentAmount > withdrawalAccount.getBalance()) {
-				inputErrorPrompts += "Insufficient funds in " + withdrawalAccount.toString();
+			if(inputsValid && paymentAmount > withdrawalAccount.getBalance()) {
+				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
 			}
-			if(inputErrorPrompts.length() > 0) {
-				return "Payment could not be made:\n" + inputErrorPrompts;
+			if(userPrompts.length() > 0) {
+				return "Payment could not be made:" + userPrompts;
 			}
 			// make payment
 			withdrawalAccount.withdrawFunds(paymentAmount);
@@ -263,45 +281,45 @@ public class NewBank {
 	private String lendMoney(CustomerID customerID, String[] requestParams, Date setupDate) {
 		Customer customer = customers.get(customerID.getKey());
 		// confirm that the parameters entered are valid, and provide prompts to the user if not
-		String inputErrorPrompts = "";
+		String userPrompts = "";
 		double lendingAmount = 0;
 		int lendingDuration = 0;
-		boolean inputParametersValid = true;
+		boolean inputsValid = true;
 		if (requestParams.length == 4) {
 			try {
 				lendingAmount = Double.parseDouble(requestParams[1]);
 				if (lendingAmount <= 0) {
 					// a lending amount must be positive
-					inputErrorPrompts += "Lending amount '" + requestParams[1] + "' is not valid.\n";
-					inputParametersValid = false;
+					userPrompts += "\nLending amount '" + requestParams[1] + "' is not valid.";
+					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Lending amount '" + requestParams[1] + "' is not valid.\n";
-				inputParametersValid = false;
+				userPrompts += "\nLending amount '" + requestParams[1] + "' is not valid.";
+				inputsValid = false;
 			}
 			Account lendingAccount = customer.getAccount(requestParams[2]);
 			if (lendingAccount == null) {
-				inputErrorPrompts += "Account to lend from '" + requestParams[2] + "' does not exist.\n";
-				inputParametersValid = false;
+				userPrompts += "\nAccount to lend from '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
 			} else if (lendingAccount.getBalance() < lendingAmount) {
-				inputErrorPrompts += "Insufficient funds in " + lendingAccount.toString() + "\n";
-				inputParametersValid = false;
+				userPrompts += "\nInsufficient funds in " + lendingAccount.toString();
+				inputsValid = false;
 			}
 			try {
 				lendingDuration = Integer.parseInt(requestParams[3]);
 				if (lendingDuration <= 0) {
 					// a lending duration must be positive
-					inputErrorPrompts += "Lending duration '" + requestParams[3] + "' is not valid.\n";
-					inputParametersValid = false;
+					userPrompts += "\nLending duration '" + requestParams[3] + "' is not valid.";
+					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
-				inputErrorPrompts += "Lending duration '" + requestParams[3] + "' is not valid.\n";
-				inputParametersValid = false;
+				userPrompts += "\nLending duration '" + requestParams[3] + "' is not valid.";
+				inputsValid = false;
 			}
-			if (inputParametersValid) {
+			if (inputsValid) {
 				if (customer.numLoansOffered() < lenderLoanLimit) {
 					// create a new loan
-					Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration);
+					Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration, calendar.getTime());
 					// add loan to customer account
 					customer.offerLoan(newLoan);
 					// add loan to marketplace
@@ -309,20 +327,20 @@ public class NewBank {
 					// confirm that loan has been set up
 					return "The following loan has been set up:\n" + newLoan.displayDetails();
 				} else {
-					inputErrorPrompts += "The maximum number of loans you can offer is " + lenderLoanLimit + ". " +
-							"Your current loans are:\n" + customer.showLoansOffered();
+					userPrompts += "The maximum number of loans you can offer is " + lenderLoanLimit + ". " +
+							"Your current loans are:\n" + customer.showLoansOffered(calendar.getTime());
 				}
 			}
-			return "Loan could not be set up:\n" + inputErrorPrompts;
+			return "Loan could not be set up:" + userPrompts;
 		}
 		return "Invalid entry. Try LEND <amount to lend> <account to lend from> <duration to lend for (weeks)>";
 	}
 
 	// shows all loans available at the bank
 	private String showLoans() {
-		String loanList = "";
+		String loanList = "Loans that are currently available\n----------------------------------";
 		for (Loan loan : loanMarketPlace.values()) {
-			loanList += loan.displayDetails() + "\n";
+			loanList += "\n" + loan.displayDetails();
 		}
 		if (loanList.length() == 0) {
 			return "No loans currently available.";
@@ -336,31 +354,31 @@ public class NewBank {
 		Customer customer = customers.get(customerID.getKey());
 		// confirm that the parameters are valid, and provide prompts to the user if not
 		String userPrompts = "";
-		boolean inputParametersValid = true;
+		boolean inputsValid = true;
 		if (requestParams.length == 3) {
 			if (!loanMarketPlace.containsKey(requestParams[1])) {
-				userPrompts += "Loan ID '" + requestParams[1] + "' is not valid.\n";
-				inputParametersValid = false;
+				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
+				inputsValid = false;
 			}
 			Account borrowingAccount = customer.getAccount(requestParams[2]);
 			if (borrowingAccount == null) {
-				userPrompts += "Account to pay loan into '" + requestParams[2] + "' does not exist.\n";
-				inputParametersValid = false;
+				userPrompts += "\nAccount to pay loan into '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
 			}
-			if (inputParametersValid) {
+			if (inputsValid) {
 				// perform eligibility checks for the loan, and provide prompts to the user if criteria are not met
 				Loan loan = loanMarketPlace.get(requestParams[1]);
 				boolean eligibleForLoan = true;
 				// perform eligibility checks
 				if (loan.getLoanValue() > (customer.getTotalFunds() * borrowerLoanSizeLimit)) {
-					userPrompts += "The maximum size of loan you are eligible for is " +
+					userPrompts += "\nThe maximum size of loan you are eligible for is " +
 							(borrowerLoanSizeLimit * customer.getTotalFunds()) + " (" +
-							borrowerLoanSizeLimit + " times the total amount of money held in your accounts).\n";
+							borrowerLoanSizeLimit + " times the total amount of money held in your accounts).";
 					eligibleForLoan = false;
 				}
 				if (customer.numLoansReceived() == borrowerLoanLimit) {
-					userPrompts += "The maximum number of loans you can get is " + borrowerLoanLimit + ". " +
-							"Your current loans are:\n" + customer.showLoansReceived();
+					userPrompts += "\nThe maximum number of loans you can get is " + borrowerLoanLimit + ". " +
+							"Your current loans are:" + customer.showLoansReceived(calendar.getTime());
 					eligibleForLoan = false;
 				}
 				if (eligibleForLoan) {
@@ -373,10 +391,10 @@ public class NewBank {
 					// confirm that loan has been successfully received
 					return "The following loan has been received:\n" + loan.displayDetails();
 				} else {
-					return "You are not eligible for this loan:\n" + userPrompts;
+					return "You are not eligible for this loan:" + userPrompts;
 				}
 			}
-			return "Unable to take out loan:\n" + userPrompts;
+			return "Unable to take out loan:" + userPrompts;
 		}
 		return "Invalid entry. Try BORROW <loan ID> <account to pay into>";
 	}
@@ -387,41 +405,41 @@ public class NewBank {
 		// confirm that the parameters entered are valid, and provide prompts to the user if not
 		String userPrompts = "";
 		double repaymentAmount = 0;
-		boolean inputParametersValid = true;
+		boolean inputsValid = true;
 		if (requestParams.length == 4) {
 			Loan loanToRepay = customer.getLoan(requestParams[1]);
 			if (loanToRepay == null) {
 				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
-				inputParametersValid = false;
+				inputsValid = false;
 			}
 			try {
 				repaymentAmount = Double.parseDouble(requestParams[2]);
 				if (repaymentAmount <= 0) {
 					userPrompts += "\nRepayment amount '" + requestParams[2] + "' must be positive.";
-					inputParametersValid = false;
+					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
 				userPrompts += "\nRepayment amount '" + requestParams[2] + "' is not valid.";
-				inputParametersValid = false;
+				inputsValid = false;
 			}
 			Account repaymentAccount = customer.getAccount(requestParams[3]);
 			if (repaymentAccount == null) {
 				userPrompts += "\nAccount to repay from '" + requestParams[3] + "' does not exist.";
-				inputParametersValid = false;
+				inputsValid = false;
 			}
-			if (inputParametersValid) {
+			if (inputsValid) {
 				// check that there are sufficient funds to make the repayment
 				if (repaymentAccount.getBalance() < repaymentAmount) {
 					userPrompts += "\nInsufficient funds to make repayment from " + repaymentAccount.toString();
-					inputParametersValid = false;
+					inputsValid = false;
 				}
 				// check that the repayment does not exceed the remaining balance on the loan
 				double outstandingBalance = loanToRepay.getRepaymentAmount(calendar.getTime());
 				if (repaymentAmount > outstandingBalance) {
 					userPrompts += "\nRepayment exceeds outstanding balance on loan: " + outstandingBalance;
-					inputParametersValid = false;
+					inputsValid = false;
 				}
-				if (inputParametersValid) {
+				if (inputsValid) {
 					// make the repayment
 					loanToRepay.makeRepayment(calendar.getTime(), repaymentAmount, repaymentAccount);
 					outstandingBalance = loanToRepay.getRepaymentAmount(calendar.getTime());

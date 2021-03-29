@@ -1,6 +1,7 @@
 package newbank.server;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class Customer {
 	
@@ -71,10 +72,10 @@ public class Customer {
 	}
 
 	// display details about the loans currently offered by the customer
-	public String showLoansOffered() {
+	public String showLoansOffered(Date currentDate) {
 		String loanList = "";
 		for (Loan loan : currentLoansOffered) {
-			loanList += loan.displayLenderDetails() + "\n";
+			loanList += "\n" + loan.displayLenderDetails(currentDate);
 		}
 		return loanList;
 	}
@@ -90,10 +91,10 @@ public class Customer {
 	}
 
 	// display details about the loans that the customer has to repay
-	public String showLoansReceived() {
+	public String showLoansReceived(Date currentDate) {
 		String loanList = "";
 		for (Loan loan : currentLoansReceived) {
-			loanList += loan.displayBorrowerDetails() + "\n";
+			loanList += "\n" + loan.displayBorrowerDetails(currentDate);
 		}
 		return loanList;
 	}

@@ -14,11 +14,12 @@ public class Loan {
     private double interestRate;
     private double repaymentAmount;
     private double totalInterestAccrued;
+    private boolean loanActive;
     private Date repaymentDeadline; // TODO - have some kind of penalty for missing the repayment deadline?
     private Date lastUpdated;
 
     // a customer who wishes to lend money can set up a loan
-    public Loan(Account lendingAccount, double principalAmount, int duration) {
+    public Loan(Account lendingAccount, double principalAmount, int duration, Date setupDate) {
         // take input information
         this.lendingAccount = lendingAccount;
         this.principalAmount = principalAmount;
@@ -38,6 +39,8 @@ public class Loan {
         }
         // commit funds to the loan
         this.lendingAccount.withdrawFunds(principalAmount);
+        this.lastUpdated = setupDate;
+        this.loanActive = false;
     }
 
     // display details about the loan
@@ -47,12 +50,14 @@ public class Loan {
     }
 
     // display status of the loan for the lender
-    public String displayLenderDetails() {
+    public String displayLenderDetails(Date currentDate) {
+        refreshInterestCalculation(currentDate); // required to refresh interest accrued value
         return loanID + ": " + principalAmount + " lent, " + totalInterestAccrued + " interest earned.";
     }
 
     // display status of the loan for the borrower
-    public String displayBorrowerDetails() {
+    public String displayBorrowerDetails(Date currentDate) {
+        refreshInterestCalculation(currentDate);
         return loanID + ": " + principalAmount + " borrowed, " + repaymentAmount + " left to pay.";
     }
 
@@ -76,18 +81,26 @@ public class Loan {
         lastUpdated = repaymentCalendar.getTime();
         repaymentCalendar.add(repaymentCalendar.DATE, (remainingDuration * 7));
         repaymentDeadline = repaymentCalendar.getTime();
+        loanActive = true;
     }
 
     // update the outstanding balance on the loan
+    private void refreshInterestCalculation(Date currentDate) {
+        if (loanActive) {
+            // determine the period (in days) since the repayment amount was last calculated
+            double interestPeriod = Math.floor((currentDate.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
+            // calculate a new repayment amount that includes the interest since the previous calculation
+            double previousRepaymentAmount = repaymentAmount;
+            repaymentAmount *= Math.pow((1 + (interestRate/365.24)), interestPeriod);
+            System.out.println("New Repayment Amount = " + repaymentAmount);
+            totalInterestAccrued += repaymentAmount - previousRepaymentAmount;
+            lastUpdated = currentDate;
+        }
+    }
+
+    // return the outstanding balance on the loan
     public double getRepaymentAmount(Date currentDate) {
-        double previousRepaymentAmount = repaymentAmount;
-        // determine the period (in days) since the repayment amount was last calculated
-        double interestPeriod = Math.floor((currentDate.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
-        // calculate a new repayment amount that includes the interest since the previous calculation
-        repaymentAmount *= Math.pow((1 + (interestRate/365.24)), interestPeriod);
-        System.out.println("New Repayment Amount = " + repaymentAmount);
-        totalInterestAccrued += repaymentAmount - previousRepaymentAmount;
-        lastUpdated = currentDate;
+        refreshInterestCalculation(currentDate);
         return repaymentAmount;
     }
 
