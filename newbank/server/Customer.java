@@ -10,10 +10,11 @@ public class Customer {
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
 	
-	public Customer() {
+	public Customer(String password) {
 		accounts = new ArrayList<>();
 		currentLoansOffered = new ArrayList<>();
 		currentLoansReceived = new ArrayList<>();
+		setPassword(password);
 	}
 	
 	public String accountsToString() {
@@ -28,6 +29,19 @@ public class Customer {
 			s += a.toString();
 		}
 		return s;
+	}
+
+	public String accountBalance(String accName) {
+		for(Account a:accounts) {
+			if(a.getName() == accName) {
+				return Double.toString(a.getBalance());
+			}
+		}
+		return "Account does not exist";
+	}
+
+	public boolean hasPassword() {
+		return password != null;
 	}
 
 	public void setPassword(String newPassword) {

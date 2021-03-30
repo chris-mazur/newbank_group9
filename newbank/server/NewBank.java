@@ -29,17 +29,17 @@ public class NewBank {
 	}
 	
 	private void addTestData() {
-		Customer bhagy = new Customer();
+		Customer bhagy = new Customer("bhagy1234");
 		bhagy.addAccount(new Account("Main", 1000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		
-		Customer christina = new Customer();
+		Customer christina = new Customer("christina5678");
 		christina.addAccount(new Account("Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
-		Customer john = new Customer();
+		Customer john = new Customer("john9999");
 		john.addAccount(new Account("Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
@@ -48,12 +48,27 @@ public class NewBank {
 	public static NewBank getBank() {
 		return bank;
 	}
-	
+
+	public void setUserPassword(Customer c, String password) {
+		c.setPassword(password);
+	}
+
 	public synchronized CustomerID checkLogInDetails(String userName, String password) {
 		if(customers.containsKey(userName) && (customers.get(userName).getPassword().equals(password))) {
 			return new CustomerID(userName);
 		}
 		return null;
+	}
+
+	public boolean usernameIsAvailable(String userName) {
+		return !customers.containsKey(userName);
+	}
+
+	public CustomerID createNewCustomer(String userName, String password) {
+		Customer c = new Customer(password);
+		customers.put(userName, c);
+		CustomerID id = new CustomerID(userName);
+		return id;
 	}
 
 	// commands from the NewBank customer are processed in this method
@@ -116,11 +131,17 @@ public class NewBank {
 				return "Account name cannot be a number. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
+				newCurrentAccount(customer, requestParams);
+				//customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
 		return "Invalid entry. Try NEWACCOUNT <account name>";
+	}
+
+	// Create an account for a customer. Used in NewBank.newAccount and NewBankClientHandler.createUserAndAccount() 
+	public void newCurrentAccount(CustomerID customer, String[] requestParams) {
+		customers.get(customer.getKey()).addAccount(new Account(requestParams[1],0.00));
 	}
 
 	//method to check if a String is Numeric. Useful when checking user input
@@ -222,10 +243,21 @@ public class NewBank {
 			// transfer funds between the specified accounts
 			withdrawalAccount.withdrawFunds(transferAmount);
 			depositAccount.depositFunds(transferAmount);
+			
 			return transferAmount + " transferred from " + withdrawalAccount.getName() + " to " +
-					depositAccount.getName();
+					depositAccount.getName() + displayChangedAccounts(customer,withdrawalAccount,depositAccount);
 		}
 		return "Invalid entry. Try MOVE <amount> <account to withraw from> <account to deposit to>";
+	}
+	
+	private String displayChangedAccounts(CustomerID customer, Account withdrawalAccount, Account depositAccount) {
+		String response;
+		response = "\nNew balances:\n";
+		String accName = withdrawalAccount.getName();
+		response += "Account name: " + accName + " Balance: " + customers.get(customer.getKey()).accountBalance(accName);
+		accName = depositAccount.getName();
+		response += "\nAccount name: " + accName + " Balance: " + customers.get(customer.getKey()).accountBalance(accName);
+		return response;
 	}
 
 	// makes a payment to another customer in the same bank
