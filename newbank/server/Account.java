@@ -1,9 +1,12 @@
 package newbank.server;
 
-public class Account {
+abstract class Account {
 	
 	private String accountName;
 	private double accountBalance;
+	protected boolean canPay;
+	protected boolean canLoan;
+	protected String accountType;
 
 	public Account(String accountName, double openingBalance) {
 		this.accountName = accountName;
@@ -11,11 +14,15 @@ public class Account {
 	}
 	
 	public String toString() {
-		return (accountName + ": " + accountBalance);
+		return (accountType + " - " + accountName + ": " + accountBalance);
 	}
 
 	public String getName() {
 		return accountName;
+	}
+
+	public String getAccountType() {
+		return accountType;
 	}
 
 	public double getBalance() {
