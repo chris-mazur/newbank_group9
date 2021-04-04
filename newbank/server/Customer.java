@@ -9,7 +9,7 @@ public class Customer {
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
-	private Integer phoneNo = null;
+	private String phoneNo = null;
 	private String address = null;
 	private String emailAddress = null;
 	private String postcode = null;
@@ -22,11 +22,11 @@ public class Customer {
 		this.postcode = postcode;
 	}
 
-	public Integer getPhoneNo() {
+	public String getPhoneNo() {
 		return phoneNo;
 	}
 
-	public void setPhoneNo(Integer phoneNo) {
+	public void setPhoneNo(String phoneNo) {
 		this.phoneNo = phoneNo;
 	}
 

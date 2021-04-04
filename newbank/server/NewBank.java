@@ -145,8 +145,12 @@ public class NewBank {
 		String details = "";
 		String address = customers.get(customer.getKey()).getAddress();
 		String postcode = customers.get(customer.getKey()).getPostcode();
-		Integer phone = customers.get(customer.getKey()).getPhoneNo();
+		String phone = customers.get(customer.getKey()).getPhoneNo();
 		String email = customers.get(customer.getKey()).getEmailAddress();
+		
+		if(address == null && postcode == null && phone == null && email == null) {
+			return "No contact details have been added yet.";
+		}
 		
 		if(address!=null) {
 			details += "Address: " + address + "\n";
@@ -164,14 +168,16 @@ public class NewBank {
 	}
 	
 	private String changeAddress(CustomerID customer, String[] requestParams) {	
-		if(requestParams.length > 1) {
-			String address = "";
+		String address = "";
+		if(requestParams.length > 1) {		
 			for(int i=1;i<requestParams.length;i++) {
 				address += requestParams[i];
 				if(i!=requestParams.length-1) address += " ";
 			}
+			customers.get(customer.getKey()).setAddress(address);
+			return "Address changed to " + address + ".";
 		}
-		return "Address changed.";
+		return "Incorrect format.";
 	}
 	
 	private String changePostcode(CustomerID customer, String[] requestParams) {
@@ -191,9 +197,9 @@ public class NewBank {
 	}
 	
 	private String changeEmail(CustomerID customer, String[] requestParams) {
-		// Regex based on howtodoinjava.com 
-		if(requestParams.length == 2) {
-			String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+		if(requestParams.length == 2){
+			// Regex based on https://www.regular-expressions.info/email.html
+			String regex = "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b";
 			Pattern pattern = Pattern.compile(regex);
 			Matcher matcher = pattern.matcher(requestParams[1]);
 			if(matcher.matches()) {
@@ -204,18 +210,24 @@ public class NewBank {
 		return "Incorrect format.";
 	}
 	
-	private String changeMobilePhone(CustomerID customer, String[] requestParams) {
-		// Regex based on regexlib.com 
-		if(requestParams.length == 2 && isNumeric(requestParams[1])) {
-				String regex = "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
-				Pattern pattern = Pattern.compile(regex);
-				Matcher matcher = pattern.matcher(requestParams[1]);	
-				if(matcher.matches()) {
-					customers.get(customer.getKey()).setPhoneNo(Integer.valueOf(requestParams[1]));
-					return "Phone number changed to " + requestParams[1] + ".";
-				}			
+	private String changeMobilePhone(CustomerID customer, String[] requestParams) {	
+		String phone = "";	
+		if(requestParams.length > 1) {		
+			for(int i=1;i<requestParams.length;i++) {
+				phone += requestParams[i];
+			}
+		} else {
+			return "Incorrect format.";
+		}		
+		// Regex based on https://www.regextester.com/104299
+		String regex = "((\\+44(\\s\\(0\\)\\s|\\s0\\s|\\s)?)|0)7\\d{3}(\\s)?\\d{6}";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setPhoneNo(phone);
+			return "Phone number changed to " + phone + ".";
 		}
-		return "Incorrect format.";
+		return "Incorrect format.";			
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
