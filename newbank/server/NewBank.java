@@ -107,8 +107,12 @@ public class NewBank {
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
-				case "CHANGEMYDETAILS":
-					return changeDetails();
+				case "CHANGEMYNAME":
+					return changeName(customer, requestParams);
+				case "CHANGEMYADDRESS":
+					return changeAddress(customer, requestParams);
+				case "CHANGEMYEMAIL":
+					return changeEmail(customer, requestParams);
 				default:
 					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
@@ -130,6 +134,10 @@ public class NewBank {
 					customer.showLoansReceived(calendar.getTime());
 		}
 		return accountData;
+	}
+	
+	private String changeDetails(CustomerID customer, String[] requestParams) {
+		return "Details changed";
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
