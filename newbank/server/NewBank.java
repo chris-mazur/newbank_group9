@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.regex.*;
 import java.lang.Double;
 import java.lang.Integer;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -89,6 +90,8 @@ public class NewBank {
 					return newSavingsAccount(customer, requestParams);
 				case "NEWCHECKINGACCOUNT":
 					return newCheckingAccount(customer, requestParams);
+				case "RENAMEACC":
+					return renameAccounts(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
 				case "MOVE":
@@ -128,6 +131,34 @@ public class NewBank {
 					customer.showLoansReceived(calendar.getTime());
 		}
 		return accountData;
+	}
+	
+	private String renameAccounts(CustomerID customer, String[] requestParams) {
+		String current = requestParams[1];
+		String renamed = requestParams[2];
+		Account tempAcc;
+		ArrayList<Account> changed_accounts = new ArrayList<Account>();
+		if(requestParams.length == 3) {	
+			ArrayList<Account> accounts = customers.get(customer.getKey()).getAccounts();		
+			for(Account account:accounts) {
+				if(account.getName().equals(renamed)) {
+					return "Account name already exists.";
+				}
+				if(account.getName().equals(current)) {
+					if(account.accountType.equals("Savings")) {
+						tempAcc = new SavingsAccount(account);
+					} else {
+						tempAcc = new CheckingAccount(account);
+					}
+					tempAcc.setName(renamed);
+					changed_accounts.add(tempAcc);
+				} else {
+					changed_accounts.add(account);
+				}
+			}		
+		}
+		customers.get(customer.getKey()).setAccounts(changed_accounts);
+		return "Account name changed from " + current + " to " + renamed;
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -185,6 +216,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"RENAMEACC <CURRENT-NAME> <NEW-NAME> - rename your account\n" +
 				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
 				"added, then the account name to deposit funds to.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
