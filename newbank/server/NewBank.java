@@ -30,7 +30,7 @@ public class NewBank {
 	
 	private void addTestData() {
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new SavingsAccount("Main", 1000.0));
+		bhagy.addAccount(new BankVault("BankVault", 1000000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		bhagy.setIsAdmin(true);
@@ -199,12 +199,13 @@ public class NewBank {
 				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.\n" +
-				"************************\n" +
-				"DEPOSIT (ADMIN ONLY) - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
+				"*********** ADMIN ONLY ***********\n" +
+				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.";
 	}
 
 	// deposits money into a specified account
+	/* SUPERSEDED METHOD
 	private String depositFunds(CustomerID customer, String[] requestParams) {
 		// confirm that the correct number of parameters have been input
 		if(requestParams.length == 3) {
@@ -235,6 +236,13 @@ public class NewBank {
 			return "Invalid entry. Try DEPOSIT <amount> <account name>";
 		}
 	}
+	*/
+	private String depositFunds(CustomerID customer, String[] requestParams) {
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to make deposits. Please contact your admin.";
+		String[] bankDetails = {"PAY",requestParams[1],"Bank Vault",requestParams[2],requestParams[3]};
+		return makePayment(customer,bankDetails);
+	}
+	
 
 	// transfers money between two accounts belonging to the same customer
 	private String transferFunds(CustomerID customer, String[] requestParams) {
