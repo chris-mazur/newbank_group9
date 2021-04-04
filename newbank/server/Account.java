@@ -20,6 +20,10 @@ abstract class Account {
 	public String getName() {
 		return accountName;
 	}
+	
+	public void setName(String name) {
+		this.accountName = name;
+	}
 
 	public String getAccountType() {
 		return accountType;
