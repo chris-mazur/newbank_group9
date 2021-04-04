@@ -12,7 +12,16 @@ public class Customer {
 	private Integer phoneNo;
 	private String address;
 	private String emailAddress;
+	private String postcode;
 	
+	public String getPostcode() {
+		return postcode;
+	}
+
+	public void setPostcode(String postcode) {
+		this.postcode = postcode;
+	}
+
 	public Integer getPhoneNo() {
 		return phoneNo;
 	}
