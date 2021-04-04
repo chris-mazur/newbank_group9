@@ -8,4 +8,11 @@ public class CheckingAccount extends Account {
         this.canLoan = true;
         this.accountType = "Checking";
     }
+    
+	public CheckingAccount(Account account) {
+		super(account);
+		this.canPay = account.canPay;
+        this.canLoan = account.canLoan;
+		this.accountType = account.accountType;
+	}
 }

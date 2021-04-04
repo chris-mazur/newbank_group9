@@ -13,6 +13,11 @@ abstract class Account {
 		this.accountBalance = openingBalance;
 	}
 	
+	public Account(Account account) {
+		this.accountName = account.accountName;
+		this.accountBalance = account.accountBalance;
+	}
+
 	public String toString() {
 		return (accountType + " - " + accountName + ": " + accountBalance);
 	}
