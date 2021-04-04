@@ -107,12 +107,16 @@ public class NewBank {
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
-				case "CHANGEMYNAME":
-					return changeName(customer, requestParams);
+				case "SHOWCONTACTDETAILS":
+					return showContactDetails(customer, requestParams);
+				case "CHANGEPOSTCODE":
+					return changePostcode(customer, requestParams);
 				case "CHANGEMYADDRESS":
 					return changeAddress(customer, requestParams);
 				case "CHANGEMYEMAIL":
 					return changeEmail(customer, requestParams);
+				case "CHANGEMYPHONE":
+					return changeMobilePhone(customer, requestParams);
 				default:
 					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
@@ -136,8 +140,82 @@ public class NewBank {
 		return accountData;
 	}
 	
-	private String changeDetails(CustomerID customer, String[] requestParams) {
-		return "Details changed";
+	private String showContactDetails(CustomerID customer, String[] requestParams) {
+		if(requestParams.length > 1) return "Incorrect format.";
+		String details = "";
+		String address = customers.get(customer.getKey()).getAddress();
+		String postcode = customers.get(customer.getKey()).getPostcode();
+		Integer phone = customers.get(customer.getKey()).getPhoneNo();
+		String email = customers.get(customer.getKey()).getEmailAddress();
+		
+		if(address!=null) {
+			details += "Address: " + address + "\n";
+		}
+		if(postcode!=null) {
+			details += "Postcode: " + postcode + "\n";
+		}
+		if(phone!=null) {
+			details += "Mobile phone no: " + phone + "\n";
+		}
+		if(email!=null) {
+			details += "Email address: " + email + "\n";
+		}
+		return details;
+	}
+	
+	private String changeAddress(CustomerID customer, String[] requestParams) {	
+		if(requestParams.length > 1) {
+			String address = "";
+			for(int i=1;i<requestParams.length;i++) {
+				address += requestParams[i];
+				if(i!=requestParams.length-1) address += " ";
+			}
+		}
+		return "Address changed.";
+	}
+	
+	private String changePostcode(CustomerID customer, String[] requestParams) {
+		// Regex based on assets.publishing.service.gov.uk
+		String postcode;
+		if(requestParams.length == 3) {
+			postcode = requestParams[1] + " " + requestParams[2];	
+			String regex = "^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(postcode);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setPostcode(postcode);
+				return "Postcode changed to " + postcode + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+	
+	private String changeEmail(CustomerID customer, String[] requestParams) {
+		// Regex based on howtodoinjava.com 
+		if(requestParams.length == 2) {
+			String regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(requestParams[1]);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setEmailAddress(requestParams[1]);
+				return "Email address changed to " + requestParams[1] + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+	
+	private String changeMobilePhone(CustomerID customer, String[] requestParams) {
+		// Regex based on regexlib.com 
+		if(requestParams.length == 2 && isNumeric(requestParams[1])) {
+				String regex = "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
+				Pattern pattern = Pattern.compile(regex);
+				Matcher matcher = pattern.matcher(requestParams[1]);	
+				if(matcher.matches()) {
+					customers.get(customer.getKey()).setPhoneNo(Integer.valueOf(requestParams[1]));
+					return "Phone number changed to " + requestParams[1] + ".";
+				}			
+		}
+		return "Incorrect format.";
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -209,7 +287,11 @@ public class NewBank {
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
-				"CHANGEMYDETAILS - change your contact details" +
+				"SHOWCONTACTDETAILS - shows all contact details.\n" +				
+				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
+				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\\n" +
+				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
+				"CHANGEMYPHONE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
