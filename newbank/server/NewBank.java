@@ -30,17 +30,17 @@ public class NewBank {
 	
 	private void addTestData() {
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new Account("Main", 1000.0));
+		bhagy.addAccount(new SavingsAccount("Main", 1000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		
 		Customer christina = new Customer("christina5678");
-		christina.addAccount(new Account("Savings", 1500.0));
+		christina.addAccount(new SavingsAccount("Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new Account("Checking", 250.0));
+		john.addAccount(new SavingsAccount("Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -68,6 +68,9 @@ public class NewBank {
 		Customer c = new Customer(password);
 		customers.put(userName, c);
 		CustomerID id = new CustomerID(userName);
+		// Create Main account upon new customer creation
+		String[] defaultAccountRequest = {"NEWSAVINGSACCOUNT","Main"};
+		bank.newSavingsAccount(id, defaultAccountRequest);
 		return id;
 	}
 
@@ -82,8 +85,10 @@ public class NewBank {
 					return showHelp();
 				case "SHOWMYACCOUNTS":
 					return showMyAccounts(customer); // this should also show money lent and borrowed
-				case "NEWACCOUNT":
-					return newAccount(customer, requestParams);
+				case "NEWSAVINGSACCOUNT":
+					return newSavingsAccount(customer, requestParams);
+				case "NEWCHECKINGACCOUNT":
+					return newCheckingAccount(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
 				case "MOVE":
@@ -125,23 +130,34 @@ public class NewBank {
 		return accountData;
 	}
 
-	private String newAccount(CustomerID customer, String[] requestParams) {
+	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
 		if(requestParams.length == 2){
 			if(isNumeric(requestParams[1])) {
 				return "Account name cannot be a number. Try again";
+			} else if (accountNameBlockList(requestParams[1])) {
+				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				newCurrentAccount(customer, requestParams);
-				//customers.get(customer.getKey()).addAccount(new Account(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new SavingsAccount(accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
-		return "Invalid entry. Try NEWACCOUNT <account name>";
+		return "Invalid entry. Try NEWSAVINGSACCOUNT <account name>";
 	}
 
-	// Create an account for a customer. Used in NewBank.newAccount and NewBankClientHandler.createUserAndAccount() 
-	public void newCurrentAccount(CustomerID customer, String[] requestParams) {
-		customers.get(customer.getKey()).addAccount(new Account(requestParams[1],0.00));
+	private String newCheckingAccount(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			if(isNumeric(requestParams[1])) {
+				return "Account name cannot be a number. Try again";
+			} else if (accountNameBlockList(requestParams[1])) {
+				return "Account name is invalid. Try again";
+			} else {
+				String accountName = requestParams[1];
+				customers.get(customer.getKey()).addAccount(new CheckingAccount(accountName,0.00));
+				return "Account created: " + accountName;
+			}
+		}
+		return "Invalid entry. Try NEWCHECKINGACCOUNT <account name>";
 	}
 
 	//method to check if a String is Numeric. Useful when checking user input
@@ -150,12 +166,24 @@ public class NewBank {
 		return Pattern.matches(regex, string);
 	}
 
+	private boolean accountNameBlockList(String string) {
+		String[] blockList = {"savings", "checking"};
+		for (String s : blockList) {
+			if (s.equals(string.toLowerCase())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// provides the user with an overview of all commands for interacting with the client
 	private String showHelp() {
 		// working draft to outline all possible commands (please update when necessary)
 		return "Welcome to NewBank! Here is a list of commands you can use:\n" +
 				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
-				"NEWACCOUNT - Creates a new bank account; enter the command followed by the name " +
+				"NEWSAVINGSACCOUNT - Creates a new Savings account; enter the command followed by the name " +
+				"you would like to give to the account.\n" +
+				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
 				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
 				"added, then the account name to deposit funds to.\n" +
@@ -283,6 +311,9 @@ public class NewBank {
 			if(withdrawalAccount == null) {
 				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
 				inputsValid = false;
+			} else if(!withdrawalAccount.canPay) {
+				userPrompts += "\n'" + withdrawalAccount.getName() + "' account cannot perform payments to other customers.";
+				inputsValid = false;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
@@ -332,6 +363,9 @@ public class NewBank {
 			Account lendingAccount = customer.getAccount(requestParams[2]);
 			if (lendingAccount == null) {
 				userPrompts += "\nAccount to lend from '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
+			} else if(!lendingAccount.canLoan) {
+				userPrompts += "\n'" + lendingAccount.getName() + "' account cannot loan money to other customers.";
 				inputsValid = false;
 			} else if (lendingAccount.getBalance() < lendingAmount) {
 				userPrompts += "\nInsufficient funds in " + lendingAccount.toString();
@@ -457,6 +491,9 @@ public class NewBank {
 			Account repaymentAccount = customer.getAccount(requestParams[3]);
 			if (repaymentAccount == null) {
 				userPrompts += "\nAccount to repay from '" + requestParams[3] + "' does not exist.";
+				inputsValid = false;
+			} else if(!repaymentAccount.canPay) {
+				userPrompts += "\n'" + repaymentAccount.getName() + "' account cannot be used to perform loan repayments.";
 				inputsValid = false;
 			}
 			if (inputsValid) {
