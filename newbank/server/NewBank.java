@@ -185,8 +185,6 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
-				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
-				"added, then the account name to deposit funds to.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
@@ -199,7 +197,10 @@ public class NewBank {
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
-				"LOGOUT - Logs you out from the NewBank command line application.";
+				"LOGOUT - Logs you out from the NewBank command line application.\n" +
+				"************************\n" +
+				"DEPOSIT (ADMIN ONLY) - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
+				"added, then the account name to deposit funds to.";
 	}
 
 	// deposits money into a specified account
