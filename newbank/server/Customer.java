@@ -9,7 +9,34 @@ public class Customer {
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
+	private Integer phoneNo;
+	private String address;
+	private String emailAddress;
 	
+	public Integer getPhoneNo() {
+		return phoneNo;
+	}
+
+	public void setPhoneNo(Integer phoneNo) {
+		this.phoneNo = phoneNo;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getEmailAddress() {
+		return emailAddress;
+	}
+
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
+	}
+
 	public Customer(String password) {
 		accounts = new ArrayList<>();
 		currentLoansOffered = new ArrayList<>();
