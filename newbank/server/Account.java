@@ -7,13 +7,6 @@ abstract class Account {
 	protected boolean canPay;
 	protected boolean canLoan;
 	protected String accountType;
-
-	public Account(Account account) {
-		this.accountName = account.accountName;
-		this.accountBalance = account.accountBalance;
-		this.canPay = account.canPay;
-		this.accountType = account.accountType;
-	}
 	
 	public Account(String accountName, double openingBalance) {
 		this.accountName = accountName;
