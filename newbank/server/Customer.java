@@ -85,6 +85,14 @@ public class Customer {
 		return currentLoansOffered.size();
 	}
 
+	public ArrayList<Account> getAccounts() {
+		return accounts;
+	}
+
+	public void setAccounts(ArrayList<Account> accounts) {
+		this.accounts = accounts;
+	}
+
 	// display details about the loans currently offered by the customer
 	public String showLoansOffered(Date currentDate) {
 		String loanList = "";
