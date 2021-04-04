@@ -33,6 +33,7 @@ public class NewBank {
 		bhagy.addAccount(new SavingsAccount("Main", 1000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
+		bhagy.setIsAdmin(true);
 		
 		Customer christina = new Customer("christina5678");
 		christina.addAccount(new SavingsAccount("Savings", 1500.0));
