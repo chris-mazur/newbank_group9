@@ -107,6 +107,8 @@ public class NewBank {
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
+				case "CHANGEMYDETAILS":
+					return changeDetails();
 				default:
 					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
@@ -199,6 +201,7 @@ public class NewBank {
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
+				"CHANGEMYDETAILS - change your contact details" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
