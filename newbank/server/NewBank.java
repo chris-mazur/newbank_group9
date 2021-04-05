@@ -129,7 +129,7 @@ public class NewBank {
 				case "CHANGEMYLANDLINE":
 					return changeLandlinePhone(customer, requestParams);
 				default:
-					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
+					return "Invalid input. Please try again or type 'HELP' for available options."; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
 		}
 		return "FAIL";
