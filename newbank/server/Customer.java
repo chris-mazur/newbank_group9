@@ -10,7 +10,16 @@ public class Customer {
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
 	private Boolean isAdmin = false;
+	private Integer overdraft = 0;
 	
+	public Integer getOverdraft() {
+		return overdraft;
+	}
+
+	public void setOverdraft(Integer overdraft) {
+		this.overdraft = overdraft;
+	}
+
 	public Boolean getIsAdmin() {
 		return isAdmin;
 	}
