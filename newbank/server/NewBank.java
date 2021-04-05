@@ -301,7 +301,7 @@ public class NewBank {
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
 				"SHOWCONTACTDETAILS - shows all contact details.\n" +				
 				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
-				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\\n" +
+				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\n" +
 				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
 				"CHANGEMYPHONE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
