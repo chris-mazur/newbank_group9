@@ -41,7 +41,7 @@ public class NewBank {
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new SavingsAccount("Checking", 250.0));
+		john.addAccount(new CheckingAccount("Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -325,6 +325,7 @@ public class NewBank {
 	// makes a payment to another customer in the same bank
 	private String makePayment(CustomerID customer, String[] requestParams) {
 		// confirm that the correct number of parameters have been input
+		Integer overdraft = customers.get(customer.getKey()).getOverdraft();
 		if(requestParams.length == 5) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
 			String userPrompts = "";
@@ -359,7 +360,7 @@ public class NewBank {
 			if (payeeAccount == null) {
 				userPrompts += "\nPayee account, '" + requestParams[4] + "' does not exist.";
 			}
-			if(inputsValid && paymentAmount > withdrawalAccount.getBalance()) {
+			if(inputsValid && paymentAmount >= withdrawalAccount.getBalance()-overdraft) {
 				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
 			}
 			if(userPrompts.length() > 0) {
