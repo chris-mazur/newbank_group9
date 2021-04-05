@@ -115,8 +115,10 @@ public class NewBank {
 					return changeAddress(customer, requestParams);
 				case "CHANGEMYEMAIL":
 					return changeEmail(customer, requestParams);
-				case "CHANGEMYPHONE":
+				case "CHANGEMYMOBILE":
 					return changeMobilePhone(customer, requestParams);
+				case "CHANGEMYLANDLINE":
+					return changeLandlinePhone(customer, requestParams);
 				default:
 					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
@@ -146,12 +148,13 @@ public class NewBank {
 		String address = customers.get(customer.getKey()).getAddress();
 		String postcode = customers.get(customer.getKey()).getPostcode();
 		String phone = customers.get(customer.getKey()).getPhoneNo();
+		String landline = customers.get(customer.getKey()).getLandlinePhoneNo();
 		String email = customers.get(customer.getKey()).getEmailAddress();
 		
-		if(address == null && postcode == null && phone == null && email == null) {
+		if(address == null && postcode == null && phone == null && email == null && landline == null) {
 			return "No contact details have been added yet.";
 		}
-		details += "Contact Details\\n---------------";
+		details += "Contact Details\n---------------";
 		if(address!=null) {
 			details += "\nAddress: " + address;
 		}
@@ -160,6 +163,9 @@ public class NewBank {
 		}
 		if(phone!=null) {
 			details += "\nMobile phone no: " + phone;
+		}
+		if(landline!=null) {
+			details += "\nLandline phone no: " + landline;
 		}
 		if(email!=null) {
 			details += "\nEmail address: " + email;
@@ -226,6 +232,20 @@ public class NewBank {
 		if(matcher.matches()) {
 			customers.get(customer.getKey()).setPhoneNo(phone);
 			return "Phone number changed to " + phone + ".";
+		}
+		return "Incorrect format.";			
+	}
+	
+	private String changeLandlinePhone(CustomerID customer, String[] requestParams) {	
+		if(requestParams.length!=4) return "Incorrect format.";
+		String phone = requestParams[1] + " " + requestParams[2] + " " + requestParams[3];	
+		// Regex based on https://regexlib.com/
+		String regex = "^((\\(?0\\d{4}\\)?\\s?\\d{3}\\s?\\d{3})|(\\(?0\\d{3}\\)?\\s?\\d{3}\\s?\\d{4})|(\\(?0\\d{2}\\)?\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setLandlinePhoneNo(phone);
+			return "Landline phone number changed to " + phone + ".";
 		}
 		return "Incorrect format.";			
 	}
@@ -303,7 +323,8 @@ public class NewBank {
 				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
 				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\n" +
 				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
-				"CHANGEMYPHONE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX\n" +
+				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
+				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
 	}
 
