@@ -92,7 +92,7 @@ public class NewBank {
 					return newCheckingAccount(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
-				case "OVERDRAFT":
+				case "SETOVERDRAFT":
 					return overdraft(customer, requestParams);
 				case "CHECKOVERDRAFT":
 					return checkoverdraft(customer);
@@ -209,6 +209,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"CHECKOVERDRAFT - Displays your current overdraft limit.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
@@ -225,7 +226,7 @@ public class NewBank {
 				"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
-				"OVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
 	}
 
 	// deposits money into a specified account
@@ -362,6 +363,7 @@ public class NewBank {
 			}
 			if(inputsValid && paymentAmount >= withdrawalAccount.getBalance()-overdraft) {
 				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
+				userPrompts += "\n" + checkoverdraft(customer);
 			}
 			if(userPrompts.length() > 0) {
 				return "Payment could not be made:" + userPrompts;
