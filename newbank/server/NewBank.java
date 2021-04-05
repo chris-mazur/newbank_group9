@@ -94,6 +94,8 @@ public class NewBank {
 					return depositFunds(customer, requestParams);
 				case "OVERDRAFT":
 					return overdraft(customer, requestParams);
+				case "CHECKOVERDRAFT":
+					return checkoverdraft(customer);
 				case "MOVE":
 					return transferFunds(customer, requestParams);
 				case "PAY":
@@ -134,7 +136,22 @@ public class NewBank {
 	}
 	
 	private String overdraft(CustomerID customer, String[] requestParams) {
-		return "";
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to change overdraft limits. Please contact your admin.";
+		if(requestParams.length!=3) return "Invalid entry.";
+		if(!isNumeric(requestParams[1])) return "Invalid entry.";
+		Integer overdraft = -Integer.valueOf(requestParams[1]);
+		Customer client = customers.get(requestParams[2]);
+		if(client!=null) {
+			client.setOverdraft(overdraft);	
+		} else {
+			return "User " + requestParams[2] + " does not exist";
+		}
+		
+		return "The overdraft for " + requestParams[2] + " has been set as -" + requestParams[1];
+	}
+	
+	private String checkoverdraft(CustomerID customer) {
+		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
