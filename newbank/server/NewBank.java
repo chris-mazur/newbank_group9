@@ -151,18 +151,18 @@ public class NewBank {
 		if(address == null && postcode == null && phone == null && email == null) {
 			return "No contact details have been added yet.";
 		}
-		
+		details += "Contact Details\\n---------------";
 		if(address!=null) {
-			details += "Address: " + address + "\n";
+			details += "\nAddress: " + address;
 		}
 		if(postcode!=null) {
-			details += "Postcode: " + postcode + "\n";
+			details += "\nPostcode: " + postcode;
 		}
 		if(phone!=null) {
-			details += "Mobile phone no: " + phone + "\n";
+			details += "\nMobile phone no: " + phone;
 		}
 		if(email!=null) {
-			details += "Email address: " + email + "\n";
+			details += "\nEmail address: " + email;
 		}
 		return details;
 	}
