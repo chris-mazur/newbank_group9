@@ -6,6 +6,8 @@ import java.lang.Double;
 import java.lang.Integer;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class NewBank {
 
@@ -16,6 +18,9 @@ public class NewBank {
 	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
 	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
 	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+	private static final String sortCode = "07-16-18";
+	private static int accountNumberCurrent;
+	private static ArrayList<Integer> accountNumberList;
 
 	// data structures for bank
 	private HashMap<String,Customer> customers; // place to store all customer data
@@ -25,22 +30,26 @@ public class NewBank {
 	private NewBank() {
 		customers = new HashMap<>();
 		loanMarketPlace = new HashMap<>();
+		accountNumberList = new ArrayList<>();
 		addTestData();
 	}
-	
+
 	private void addTestData() {
+		//initial starting account number
+		accountNumberCurrent = 77771234;
+
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new SavingsAccount("Main", 1000.0));
+		bhagy.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Main", 1000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		
 		Customer christina = new Customer("christina5678");
-		christina.addAccount(new SavingsAccount("Savings", 1500.0));
+		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new SavingsAccount("Checking", 250.0));
+		john.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -138,7 +147,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new SavingsAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new SavingsAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -153,7 +162,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new CheckingAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new CheckingAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -164,6 +173,17 @@ public class NewBank {
 	private boolean isNumeric(String string) {
 		String regex = "-?\\d+(\\.\\d+)?";
 		return Pattern.matches(regex, string);
+	}
+
+	private int assignAccountNumber() {
+		Random r = new Random();
+		//generate a random account number that is not in current list
+		while (accountNumberList.contains(accountNumberCurrent)) {
+			accountNumberCurrent = r.nextInt((79999999-70000000) + 1) + 70000000;
+		}
+		accountNumberList.add(accountNumberCurrent);
+		System.out.println("Account number assigned: " + accountNumberCurrent);
+		return accountNumberCurrent;
 	}
 
 	private boolean accountNameBlockList(String string) {
