@@ -92,6 +92,8 @@ public class NewBank {
 					return newCheckingAccount(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
+				case "OVERDRAFT":
+					return overdraft(customer, requestParams);
 				case "MOVE":
 					return transferFunds(customer, requestParams);
 				case "PAY":
@@ -129,6 +131,10 @@ public class NewBank {
 					customer.showLoansReceived(calendar.getTime());
 		}
 		return accountData;
+	}
+	
+	private String overdraft(CustomerID customer, String[] requestParams) {
+		return "";
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -201,7 +207,8 @@ public class NewBank {
 				"LOGOUT - Logs you out from the NewBank command line application.\n" +
 				"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
-				"added, then the account name to deposit funds to.";
+				"added, then the account name to deposit funds to.\n" +
+				"OVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
 	}
 
 	// deposits money into a specified account
