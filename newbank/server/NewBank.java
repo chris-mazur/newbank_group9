@@ -108,7 +108,7 @@ public class NewBank {
 				case "LOGOUT":
 					return "LOGOUT";
 				default:
-					return "Invalid input. Please try again.\n" + showHelp(); // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
+					return "Invalid input. Please try again or type 'HELP' for available options."; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
 			}
 		}
 		return "FAIL";
