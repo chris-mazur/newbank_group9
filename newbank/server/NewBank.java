@@ -20,6 +20,11 @@ public class NewBank {
 	private static final double lenderLoanSizeLimit = 0.8; // limits the total size of loans relative to lender funds
 	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
 	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+	private static final double shortTermInterestRate = 0.05;
+	private static final int shortTermInterestDuration = 4; // weeks
+	private static final double mediumTermInterestRate = 0.04;
+	private static final int mediumTermInterestDuration = 12; // weeks
+	private static final double longTermInterestRate = 0.03;
 	private static final String sortCode = "07-16-18";
 	private static int accountNumberCurrent;
 	private static ArrayList<Integer> accountNumberList;
@@ -488,6 +493,17 @@ public class NewBank {
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
 	}
 
+	// determine the interest rate that should be used based on the duration of the loan / savings period
+	private double getInterestRate(int duration) {
+		if (duration < shortTermInterestDuration) {
+			return shortTermInterestRate;
+		} else if (duration < mediumTermInterestDuration) {
+			return mediumTermInterestRate;
+		} else {
+			return longTermInterestRate;
+		}
+	}
+
 	// set up a loan and add it to the loans marketplace
 	private String lendMoney(CustomerID customerID, String[] requestParams) {
 		Customer customer = customers.get(customerID.getKey());
@@ -557,8 +573,10 @@ public class NewBank {
 			}
 			// set up the loan if all of the criteria are met
 			if (inputsValid) {
+				// set interest rate
+				double interestRate = getInterestRate(lendingDuration);
 				// create a new loan
-				Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration, calendar.getTime());
+				Loan newLoan = new Loan(lendingAccount, lendingAmount, interestRate, lendingDuration, calendar.getTime());
 				// add loan to customer account
 				customer.offerLoan(newLoan);
 				// add loan to marketplace

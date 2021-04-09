@@ -7,11 +7,11 @@ import java.lang.Math;
 public class Loan {
 
     private static int ID = 1;
-    private String loanID;
-    private Account lendingAccount;
-    private double principalAmount;
-    private int remainingDuration; // weeks
-    private double interestRate;
+    private final String loanID;
+    private final Account lendingAccount;
+    private final double principalAmount;
+    private final int remainingDuration; // weeks
+    private final double interestRate;
     private double repaymentAmount;
     private double totalInterestAccrued;
     private boolean loanActive;
@@ -19,24 +19,16 @@ public class Loan {
     private Date lastUpdated;
 
     // a customer who wishes to lend money can set up a loan
-    public Loan(Account lendingAccount, double principalAmount, int duration, Date setupDate) {
+    public Loan(Account lendingAccount, double principalAmount, double interestRate, int duration, Date setupDate) {
         // take input information
         this.lendingAccount = lendingAccount;
         this.principalAmount = principalAmount;
         this.repaymentAmount = principalAmount;
+        this.interestRate = interestRate;
         this.remainingDuration = duration;
         // set a unique ID for the loan
         loanID = "Loan" + ID;
         ID++;
-        // The annual rate of interest (in decimal) is chosen based on the loan duration (in weeks)
-        // TODO - make it possible for the bank to change the interest rates (probably take out of this class)
-        if (duration < 4) {
-            interestRate = 0.05;
-        } else if (duration < 12) {
-            interestRate = 0.04;
-        } else {
-            interestRate = 0.03;
-        }
         // commit funds to the loan
         this.lendingAccount.withdrawFunds(principalAmount);
         this.lastUpdated = setupDate;
@@ -79,7 +71,7 @@ public class Loan {
         Calendar repaymentCalendar = Calendar.getInstance();
         repaymentCalendar.setTime(startDate);
         lastUpdated = repaymentCalendar.getTime();
-        repaymentCalendar.add(repaymentCalendar.DATE, (remainingDuration * 7));
+        repaymentCalendar.add(Calendar.DATE, (remainingDuration * 7));
         repaymentDeadline = repaymentCalendar.getTime();
         loanActive = true;
     }
@@ -88,7 +80,8 @@ public class Loan {
     private void refreshInterestCalculation(Date currentDate) {
         if (loanActive) {
             // determine the period (in days) since the repayment amount was last calculated
-            double interestPeriod = Math.floor((currentDate.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
+            long timeElapsed = currentDate.getTime() - lastUpdated.getTime(); // milliseconds
+            int interestPeriod = (int) timeElapsed / (1000 * 60 * 60 * 24); // days
             // calculate a new repayment amount that includes the interest since the previous calculation
             double previousRepaymentAmount = repaymentAmount;
             repaymentAmount *= Math.pow((1 + (interestRate/365.24)), interestPeriod);
