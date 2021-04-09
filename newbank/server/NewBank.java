@@ -8,6 +8,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Random;
+import java.lang.Math;
 
 public class NewBank {
 
@@ -600,16 +601,27 @@ public class NewBank {
 				inputsValid = false;
 			}
 			if (inputsValid) {
-				// perform eligibility checks for the loan, and provide prompts to the user if criteria are not met
+				// check that the customer is not currently lending money
+				if (customer.numLoansOffered() > 0) {
+					userPrompts += "\nYou are not eligible to borrow money while you are lending money:" +
+							customer.showLoansOffered(calendar.getTime());
+					inputsValid = false;
+				}
+			}
+			// perform eligibility checks for the loan, and provide prompts to the user if criteria are not met
+			if (inputsValid) {
 				Loan loan = loanMarketPlace.get(requestParams[1]);
 				boolean eligibleForLoan = true;
-				// perform eligibility checks
-				if (loan.getLoanValue() > (customer.getTotalFunds() * borrowerLoanSizeLimit)) {
-					userPrompts += "\nThe maximum size of loan you are eligible for is " +
-							(borrowerLoanSizeLimit * customer.getTotalFunds()) + " (" +
-							borrowerLoanSizeLimit + " times the total amount of money held in your accounts).";
+				double customerBorrowing = customer.getTotalLoansReceived();
+				double customerCollateral = Math.max(0, customer.getTotalFunds() - customerBorrowing);
+				double customerLoanLimit = customerCollateral * borrowerLoanSizeLimit;
+				// check that the customer is not trying to borrow more money than is permitted by the bank
+				if ((customerBorrowing + loan.getLoanValue()) > customerLoanLimit) {
+					userPrompts += "\nThe maximum size of loan you are eligible for is " + customerLoanLimit + " (" +
+							borrowerLoanSizeLimit + " times the non-loan balance held in your accounts).";
 					eligibleForLoan = false;
 				}
+				// check that the customer is not trying to take out more loans than is permitted by the bank
 				if (customer.numLoansReceived() == borrowerLoanLimit) {
 					userPrompts += "\nThe maximum number of loans you can get is " + borrowerLoanLimit + ". " +
 							"Your current loans are:" + customer.showLoansReceived(calendar.getTime());

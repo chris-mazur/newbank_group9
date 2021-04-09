@@ -120,6 +120,15 @@ public class Customer {
 		return totalLoansOffered;
 	}
 
+	// return the total amount of money borrowed from other customers
+	public double getTotalLoansReceived() {
+		double totalLoansReceived = 0;
+		for (Loan loan : currentLoansReceived) {
+			totalLoansReceived += loan.getLoanValue();
+		}
+		return totalLoansReceived;
+	}
+
 	// return a requested customer account if it exists (or null if not)
 	public Account getAccount(String accountName) {
 		for(Account account : accounts) {
