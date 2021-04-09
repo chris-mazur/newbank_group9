@@ -16,6 +16,7 @@ public class NewBank {
 
 	// parameters set by the bank
 	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
+	private static final double lenderLoanSizeLimit = 0.8; // limits the total size of loans relative to lender funds
 	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
 	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
 	private static final String sortCode = "07-16-18";
@@ -105,7 +106,7 @@ public class NewBank {
 				case "PAY":
 					return makePayment(customer, requestParams);
 				case "LEND":
-					return lendMoney(customer, requestParams, calendar.getTime());
+					return lendMoney(customer, requestParams);
 				case "LOANS":
 					return showLoans();
 				case "BORROW":
@@ -487,7 +488,7 @@ public class NewBank {
 	}
 
 	// set up a loan and add it to the loans marketplace
-	private String lendMoney(CustomerID customerID, String[] requestParams, Date setupDate) {
+	private String lendMoney(CustomerID customerID, String[] requestParams) {
 		Customer customer = customers.get(customerID.getKey());
 		// confirm that the parameters entered are valid, and provide prompts to the user if not
 		String userPrompts = "";
@@ -510,11 +511,11 @@ public class NewBank {
 			if (lendingAccount == null) {
 				userPrompts += "\nAccount to lend from '" + requestParams[2] + "' does not exist.";
 				inputsValid = false;
-			} else if(!lendingAccount.canLoan) {
+			} else if (!lendingAccount.canLoan) {
 				userPrompts += "\n'" + lendingAccount.getName() + "' account cannot loan money to other customers.";
 				inputsValid = false;
 			} else if (lendingAccount.getBalance() < lendingAmount) {
-				userPrompts += "\nInsufficient funds in " + lendingAccount.toString();
+				userPrompts += "\nInsufficient funds in " + lendingAccount;
 				inputsValid = false;
 			}
 			try {
@@ -528,20 +529,41 @@ public class NewBank {
 				userPrompts += "\nLending duration '" + requestParams[3] + "' is not valid.";
 				inputsValid = false;
 			}
+			// perform checks to ensure that what the customer is requesting is permitted by the bank
 			if (inputsValid) {
-				if (customer.numLoansOffered() < lenderLoanLimit) {
-					// create a new loan
-					Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration, calendar.getTime());
-					// add loan to customer account
-					customer.offerLoan(newLoan);
-					// add loan to marketplace
-					loanMarketPlace.put(newLoan.getLoanID(), newLoan);
-					// confirm that loan has been set up
-					return "The following loan has been set up:\n" + newLoan.displayDetails();
-				} else {
-					userPrompts += "The maximum number of loans you can offer is " + lenderLoanLimit + ". " +
-							"Your current loans are:\n" + customer.showLoansOffered(calendar.getTime());
+				// check that the customer has no active loans to pay back
+				if (customer.numLoansReceived() > 0) {
+					userPrompts += "\nYou are not eligible to lend money while you have loans to pay back:\n" +
+							customer.showLoansReceived(calendar.getTime());
+					inputsValid = false;
 				}
+			}
+			if (inputsValid) {
+				// check that the customer is not trying to offer more loans than is permitted by the bank
+				if (customer.numLoansOffered() == lenderLoanLimit) {
+					userPrompts += "\nThe maximum number of loans you can offer is " + lenderLoanLimit + ". " +
+							"Your current loans are:\n" + customer.showLoansOffered(calendar.getTime());
+					inputsValid = false;
+				}
+				// check that the customer is not trying to lend more money than is permitted by the bank
+				double customerLending = customer.getTotalLoansOffered();
+				double customerLoanSizeLimit = lenderLoanSizeLimit * (customerLending + customer.getTotalFunds());
+				if (customerLending + lendingAmount > customerLoanSizeLimit) {
+					userPrompts += "\nThe maximum amount of money that you can lend is " + customerLoanSizeLimit +
+							". The total value of loans you have already offered is " + customerLending + ".";
+					inputsValid = false;
+				}
+			}
+			// set up the loan if all of the criteria are met
+			if (inputsValid) {
+				// create a new loan
+				Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration, calendar.getTime());
+				// add loan to customer account
+				customer.offerLoan(newLoan);
+				// add loan to marketplace
+				loanMarketPlace.put(newLoan.getLoanID(), newLoan);
+				// confirm that loan has been set up
+				return "The following loan has been set up:\n" + newLoan.displayDetails();
 			}
 			return "Loan could not be set up:" + userPrompts;
 		}
