@@ -2,12 +2,15 @@ package newbank.server;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Stack;
 
 public class Customer {
 	
 	private ArrayList<Account> accounts;
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
+	private Stack<Transaction> transactions;
 	private String password;
 
 	private Boolean isAdmin = false;
@@ -27,6 +30,14 @@ public class Customer {
 
 	public void setIsAdmin(Boolean admin) {
 		this.isAdmin = admin;
+	}
+
+	public void addTransaction(String payee, String payeeAccountName, String beneficiary, String beneficiaryAccountName, Double amount) {
+		transactions.add(new Transaction(payee,payeeAccountName,beneficiary,beneficiaryAccountName,amount));
+	}
+
+	public Stack<Transaction> getTransactions() {
+		return this.transactions;
 	}
 
 	private String phoneNo = null; // mobile
@@ -81,6 +92,7 @@ public class Customer {
 		accounts = new ArrayList<>();
 		currentLoansOffered = new ArrayList<>();
 		currentLoansReceived = new ArrayList<>();
+		transactions = new Stack<Transaction>();
 		setPassword(password);
 	}
 	

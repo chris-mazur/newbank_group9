@@ -104,6 +104,10 @@ public class NewBank {
 					return showHelp();
 				case "SHOWMYACCOUNTS":
 					return showMyAccounts(customer); // this should also show money lent and borrowed
+				case "SHOWRECENTTRANSACTIONS":
+					return showRecentTransactions(customer, requestParams);
+				case "SHOWALLTRANSACTIONS":
+					return showAllTransactions(customer, requestParams);
 				case "NEWSAVINGSACCOUNT":
 					return newSavingsAccount(customer, requestParams);
 				case "NEWCHECKINGACCOUNT":
@@ -361,6 +365,8 @@ public class NewBank {
 		// working draft to outline all possible commands (please update when necessary)
 		return "Welcome to NewBank! Here is a list of commands you can use:\n" +
 				"SHOWMYACCOUNTS - Displays a list of all bank accounts you currently have.\n" +
+				"SHOWRECENTTRANSACTIONS <NR 1-20 RECENT TRANSACTIONS>- Show 1-20 recent transactions.\n" +
+				"SHOWALLTRANSACTIONS - Show all transactions.\n" +
 				"NEWSAVINGSACCOUNT - Creates a new Savings account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
@@ -404,6 +410,35 @@ public class NewBank {
 		return makePayment(customer,bankDetails);
 	}
 
+	private String showRecentTransactions(CustomerID customer, String[] requestParams) {
+		if(requestParams.length!=2) return "Invalid parameters. Please try again.";
+		if(!isNumeric(requestParams[1])) return "Invalid parameters. Please try again.";
+		if(customers.get(customer.getKey()).getTransactions().size() == 0) return "There are no transactions yet.";
+		String toString = "Recent transactions: ";
+		if(Integer.valueOf(requestParams[1]) >= 1 && Integer.parseInt(requestParams[1]) <= 20) {
+			int size = customers.get(customer.getKey()).getTransactions().size();
+			int lowerLimit = size-Integer.parseInt(requestParams[1]);
+			if(lowerLimit < 0) lowerLimit = 0;
+			for(int i = size-1; i >= lowerLimit; i--) {
+				toString += "\n";
+				toString += customers.get(customer.getKey()).getTransactions().get(i);
+			}
+		}
+		return toString;
+	}
+
+	private String showAllTransactions(CustomerID customer, String[] requestParams) {
+		if(requestParams.length!=1) return "Invalid parameters. Please try again.";
+		if(customers.get(customer.getKey()).getTransactions().size() == 0) return "There are no transactions yet.";
+		String toString = "All transactions: ";
+		int size = customers.get(customer.getKey()).getTransactions().size();
+		for(int i = size-1; i >= 0; i--) {
+			toString += "\n";
+			toString += customers.get(customer.getKey()).getTransactions().get(i);
+		}
+		return toString;
+	}
+
 	// transfers money between two accounts belonging to the same customer
 	private String transferFunds(CustomerID customer, String[] requestParams) {
 		// confirm that the correct number of parameters have been input
@@ -423,6 +458,7 @@ public class NewBank {
 				userPrompts += "\nTransfer amount '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
 			}
+
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
 				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
@@ -441,6 +477,10 @@ public class NewBank {
 			// transfer funds between the specified accounts
 			withdrawalAccount.withdrawFunds(transferAmount);
 			depositAccount.depositFunds(transferAmount);
+
+			// Add to transactions
+			customers.get(customer.getKey()).addTransaction(customer.getKey(),withdrawalAccount.getName(),customer.getKey(),depositAccount.getName(),transferAmount);
+
 			
 			return transferAmount + " transferred from " + withdrawalAccount.getName() + " to " +
 					depositAccount.getName() + displayChangedAccounts(customer,withdrawalAccount,depositAccount);
@@ -511,6 +551,11 @@ public class NewBank {
 			// make payment
 			withdrawalAccount.withdrawFunds(paymentAmount);
 			payeeAccount.depositFunds(paymentAmount);
+
+			// Add to Transactions
+			customers.get(customer.getKey()).addTransaction(customer.getKey(),withdrawalAccount.getName(),requestParams[3],payeeAccount.getName(),paymentAmount);
+			payee.addTransaction(customer.getKey(),withdrawalAccount.getName(),requestParams[3],payeeAccount.getName(),paymentAmount);
+
 			return "Payment of " + paymentAmount + " successfully made.\n" +
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
