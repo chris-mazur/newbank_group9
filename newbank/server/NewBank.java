@@ -101,6 +101,10 @@ public class NewBank {
 					return newCheckingAccount(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
+				case "SETOVERDRAFT":
+					return overdraft(customer, requestParams);
+				case "CHECKOVERDRAFT":
+					return checkoverdraft(customer);
 				case "MOVE":
 					return transferFunds(customer, requestParams);
 				case "PAY":
@@ -152,6 +156,25 @@ public class NewBank {
 		return accountData;
 	}
 	
+
+	private String overdraft(CustomerID customer, String[] requestParams) {
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to change overdraft limits. Please contact your admin.";
+		if(requestParams.length!=3) return "Invalid entry.";
+		if(!isNumeric(requestParams[1])) return "Invalid entry.";
+		Integer overdraft = -Integer.valueOf(requestParams[1]);
+		Customer client = customers.get(requestParams[2]);
+		if(client!=null) {
+			client.setOverdraft(overdraft);	
+		} else {
+			return "User " + requestParams[2] + " does not exist";
+		}
+		
+		return "The overdraft for " + requestParams[2] + " has been set as -" + requestParams[1];
+	}
+	
+	private String checkoverdraft(CustomerID customer) {
+		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
+
 	private String showContactDetails(CustomerID customer, String[] requestParams) {
 		if(requestParams.length > 1) return "Incorrect format.";
 		String details = "";
@@ -257,7 +280,7 @@ public class NewBank {
 			customers.get(customer.getKey()).setLandlinePhoneNo(phone);
 			return "Landline phone number changed to " + phone + ".";
 		}
-		return "Incorrect format.";			
+		return "Incorrect format.";
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -326,6 +349,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"CHECKOVERDRAFT - Displays your current overdraft limit.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
@@ -347,7 +371,8 @@ public class NewBank {
 				"LOGOUT - Logs you out from the NewBank command line application.";
     		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
-				"added, then the account name to deposit funds to.";
+				"added, then the account name to deposit funds to.\n" +
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
 	}
 
 	private String depositFunds(CustomerID customer, String[] requestParams) {
@@ -414,6 +439,7 @@ public class NewBank {
 	// makes a payment to another customer in the same bank
 	private String makePayment(CustomerID customer, String[] requestParams) {
 		// confirm that the correct number of parameters have been input
+		Integer overdraft = customers.get(customer.getKey()).getOverdraft();
 		if(requestParams.length == 5) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
 			String userPrompts = "";
@@ -453,8 +479,9 @@ public class NewBank {
 			if (payeeAccount == null) {
 				userPrompts += "\nPayee account, '" + requestParams[4] + "' does not exist.";
 			}
-			if(inputsValid && paymentAmount > withdrawalAccount.getBalance()) {
+			if(inputsValid && paymentAmount >= withdrawalAccount.getBalance()-overdraft) {
 				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
+				userPrompts += "\n" + checkoverdraft(customer);
 			}
 			if(userPrompts.length() > 0) {
 				return "Payment could not be made:" + userPrompts;

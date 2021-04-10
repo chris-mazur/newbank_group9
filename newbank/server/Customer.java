@@ -11,7 +11,16 @@ public class Customer {
 	private String password;
 
 	private Boolean isAdmin = false;
+	private Integer overdraft = 0;
 	
+	public Integer getOverdraft() {
+		return overdraft;
+	}
+
+	public void setOverdraft(Integer overdraft) {
+		this.overdraft = overdraft;
+	}
+
 	public Boolean getIsAdmin() {
 		return isAdmin;
 	}
