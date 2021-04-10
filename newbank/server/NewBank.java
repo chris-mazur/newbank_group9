@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.regex.*;
 import java.lang.Double;
 import java.lang.Integer;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.Random;
+import java.lang.Math;
 
 public class NewBank {
 
@@ -15,33 +17,49 @@ public class NewBank {
 
 	// parameters set by the bank
 	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
+	private static final double lenderLoanSizeLimit = 0.8; // limits the total size of loans relative to lender funds
 	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
 	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+	private static final double shortTermInterestRate = 0.05;
+	private static final int shortTermInterestDuration = 4; // weeks
+	private static final double mediumTermInterestRate = 0.04;
+	private static final int mediumTermInterestDuration = 12; // weeks
+	private static final double longTermInterestRate = 0.03;
+	private static final String sortCode = "07-16-18";
+	private static int accountNumberCurrent;
+	private static ArrayList<Integer> accountNumberList;
 
 	// data structures for bank
 	private HashMap<String,Customer> customers; // place to store all customer data
 	private Calendar calendar = Calendar.getInstance(); // for time-dependent operations (e.g. interest)
-	private HashMap<String, Loan> loanMarketPlace; // place to store loans before people take them
+	private HashMap<String, Loan> loanOfferMarketPlace; // place to store loan offers before people take them
+	private HashMap<String, Loan> loanRequestMarketPlace; // place to store loan requests before people grant them
 
 	private NewBank() {
 		customers = new HashMap<>();
-		loanMarketPlace = new HashMap<>();
+		loanOfferMarketPlace = new HashMap<>();
+		loanRequestMarketPlace = new HashMap<>();
+		accountNumberList = new ArrayList<>();
 		addTestData();
 	}
 	
 	private void addTestData() {
+		//initial starting account number
+		accountNumberCurrent = 77771234;
+
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new SavingsAccount("Main", 1000.0));
+		bhagy.addAccount(new BankVault("BankVault", 1000000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
-		
+		bhagy.setIsAdmin(true);
+
 		Customer christina = new Customer("christina5678");
-		christina.addAccount(new SavingsAccount("Savings", 1500.0));
+		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new SavingsAccount("Checking", 250.0));
+		john.addAccount(new CheckingAccount(sortCode, assignAccountNumber(), "Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -94,24 +112,46 @@ public class NewBank {
 					return renameAccounts(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
+				case "SETOVERDRAFT":
+					return overdraft(customer, requestParams);
+				case "CHECKOVERDRAFT":
+					return checkoverdraft(customer);
 				case "MOVE":
 					return transferFunds(customer, requestParams);
 				case "PAY":
 					return makePayment(customer, requestParams);
-				case "LEND":
-					return lendMoney(customer, requestParams, calendar.getTime());
-				case "LOANS":
+				case "OFFERLOAN":
+					return offerLoan(customer, requestParams);
+				case "REQUESTLOAN":
+					return requestLoan(customer, requestParams);
+				case "SHOWLOANS":
 					return showLoans();
-				case "BORROW":
-					return borrowMoney(customer, requestParams); // loanID
+				case "LENDTO":
+					return lendTo(customer, requestParams);
+				case "BORROWFROM":
+					return borrowFrom(customer, requestParams);
 				case "REPAY":
-					return loanRepayment(customer, requestParams); // loanID, repayment amount
+					return loanRepayment(customer, requestParams);
+				case "REMOVELOAN":
+					return removeLoan(customer, requestParams);
 				case "TIMETRAVEL": // for testing purposes
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
+				case "SHOWCONTACTDETAILS":
+					return showContactDetails(customer, requestParams);
+				case "CHANGEPOSTCODE":
+					return changePostcode(customer, requestParams);
+				case "CHANGEMYADDRESS":
+					return changeAddress(customer, requestParams);
+				case "CHANGEMYEMAIL":
+					return changeEmail(customer, requestParams);
+				case "CHANGEMYMOBILE":
+					return changeMobilePhone(customer, requestParams);
+				case "CHANGEMYLANDLINE":
+					return changeLandlinePhone(customer, requestParams);
 				default:
-					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
+					return "Invalid input. Please try again or type 'HELP' for available options.";
 			}
 		}
 		return "FAIL";
@@ -132,7 +172,134 @@ public class NewBank {
 		}
 		return accountData;
 	}
-	
+
+
+	private String overdraft(CustomerID customer, String[] requestParams) {
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to change overdraft limits. Please contact your admin.";
+		if(requestParams.length!=3) return "Invalid entry.";
+		if(!isNumeric(requestParams[1])) return "Invalid entry.";
+		Integer overdraft = -Integer.valueOf(requestParams[1]);
+		Customer client = customers.get(requestParams[2]);
+		if(client!=null) {
+			client.setOverdraft(overdraft);
+		} else {
+			return "User " + requestParams[2] + " does not exist";
+		}
+
+		return "The overdraft for " + requestParams[2] + " has been set as -" + requestParams[1];
+	}
+
+	private String checkoverdraft(CustomerID customer) {
+		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
+
+	private String showContactDetails(CustomerID customer, String[] requestParams) {
+		if(requestParams.length > 1) return "Incorrect format.";
+		String details = "";
+		String address = customers.get(customer.getKey()).getAddress();
+		String postcode = customers.get(customer.getKey()).getPostcode();
+		String phone = customers.get(customer.getKey()).getPhoneNo();
+		String landline = customers.get(customer.getKey()).getLandlinePhoneNo();
+		String email = customers.get(customer.getKey()).getEmailAddress();
+
+		if(address == null && postcode == null && phone == null && email == null && landline == null) {
+			return "No contact details have been added yet.";
+		}
+		details += "Contact Details\n---------------";
+		if(address!=null) {
+			details += "\nAddress: " + address;
+		}
+		if(postcode!=null) {
+			details += "\nPostcode: " + postcode;
+		}
+		if(phone!=null) {
+			details += "\nMobile phone no: " + phone;
+		}
+		if(landline!=null) {
+			details += "\nLandline phone no: " + landline;
+		}
+		if(email!=null) {
+			details += "\nEmail address: " + email;
+		}
+		return details;
+	}
+
+	private String changeAddress(CustomerID customer, String[] requestParams) {
+		String address = "";
+		if(requestParams.length > 1) {
+			for(int i=1;i<requestParams.length;i++) {
+				address += requestParams[i];
+				if(i!=requestParams.length-1) address += " ";
+			}
+			customers.get(customer.getKey()).setAddress(address);
+			return "Address changed to " + address + ".";
+		}
+		return "Incorrect format.";
+	}
+
+	private String changePostcode(CustomerID customer, String[] requestParams) {
+		// Regex based on assets.publishing.service.gov.uk
+		String postcode;
+		if(requestParams.length == 3) {
+			postcode = requestParams[1] + " " + requestParams[2];
+			String regex = "^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(postcode);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setPostcode(postcode);
+				return "Postcode changed to " + postcode + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+
+	private String changeEmail(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			// Regex based on https://www.regular-expressions.info/email.html
+			String regex = "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(requestParams[1]);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setEmailAddress(requestParams[1]);
+				return "Email address changed to " + requestParams[1] + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+
+	private String changeMobilePhone(CustomerID customer, String[] requestParams) {
+		String phone = "";
+		if(requestParams.length > 1) {
+			for(int i=1;i<requestParams.length;i++) {
+				phone += requestParams[i];
+			}
+		} else {
+			return "Incorrect format.";
+		}
+		// Regex based on https://www.regextester.com/104299
+		String regex = "((\\+44(\\s\\(0\\)\\s|\\s0\\s|\\s)?)|0)7\\d{3}(\\s)?\\d{6}";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setPhoneNo(phone);
+			return "Phone number changed to " + phone + ".";
+		}
+		return "Incorrect format.";
+	}
+
+	private String changeLandlinePhone(CustomerID customer, String[] requestParams) {
+		if(requestParams.length!=4) return "Incorrect format.";
+		String phone = requestParams[1] + " " + requestParams[2] + " " + requestParams[3];
+		// Regex based on https://regexlib.com/
+		String regex = "^((\\(?0\\d{4}\\)?\\s?\\d{3}\\s?\\d{3})|(\\(?0\\d{3}\\)?\\s?\\d{3}\\s?\\d{4})|(\\(?0\\d{2}\\)?\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setLandlinePhoneNo(phone);
+			return "Landline phone number changed to " + phone + ".";
+		}
+		return "Incorrect format.";
+	}
+
 	private String renameAccounts(CustomerID customer, String[] requestParams) {
 		String current;
 		String renamed;
@@ -163,7 +330,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new SavingsAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new SavingsAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -178,7 +345,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new CheckingAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new CheckingAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -189,6 +356,17 @@ public class NewBank {
 	private boolean isNumeric(String string) {
 		String regex = "-?\\d+(\\.\\d+)?";
 		return Pattern.matches(regex, string);
+	}
+
+	private int assignAccountNumber() {
+		Random r = new Random();
+		//generate a random account number that is not in current list
+		while (accountNumberList.contains(accountNumberCurrent)) {
+			accountNumberCurrent = r.nextInt((79999999-70000000) + 1) + 70000000;
+		}
+		accountNumberList.add(accountNumberCurrent);
+		System.out.println("Account number assigned: " + accountNumberCurrent);
+		return accountNumberCurrent;
 	}
 
 	private boolean accountNameBlockList(String string) {
@@ -210,6 +388,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
+				"CHECKOVERDRAFT - Displays your current overdraft limit.\n" +
 				"RENAMEACCOUNT <CURRENT-NAME> <NEW-NAME> - rename your account\n" +
 				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
 				"added, then the account name to deposit funds to.\n" +
@@ -217,47 +396,39 @@ public class NewBank {
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
 				"account to pay from, name of the payee, and the account name of the payee.\n" +
-				"LEND - Lend money directly to other members of the bank; enter the command followed by the amount " +
-				" to lend, the account to pay from, and the duration (in weeks) to make the money available for.\n" +
-				"LOANS - Displays a list of all loans that are currently available.\n" +
-				"BORROW - Apply for a loan; enter the command followed by the name of the loan and the name of the " +
+				"OFFERLOAN - Lend money directly to other members of the bank; enter the command followed by the " +
+				"amount to lend, the account to pay from, and the duration (in weeks) of the loan.\n" +
+				"REQUESTLOAN - Borrow momey directly from other members of the bank; enter the command followed by " +
+				"the amount to borrow, the account to pay into, and the duration (in weeks) to borrow for.\n" +
+				"SHOWLOANS - Displays a list of all loans that are currently available.\n" +
+				"LENDTO - Fulfill a loan request; enter the command followed by the name of the loan and the name of " +
+				"the account you would like to lend money from.\n" +
+				"BORROWFROM - Apply for a loan; enter the command followed by the name of the loan and the name of the " +
 				"account you would like the money to be paid into.\n" +
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
+				"REMOVELOAN - Remove a loan from your account; enter the command followed by the name of the loan to " +
+				"be removed (it must not have an outstanding balance to be repaid).\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
+				"SHOWCONTACTDETAILS - shows all contact details.\n" +
+				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
+				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\n" +
+				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
+				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
+				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.";
+    		"*********** ADMIN ONLY ***********\n" +
+				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
+				"added, then the account name to deposit funds to.\n" +
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
 	}
 
 	// deposits money into a specified account
 	private String depositFunds(CustomerID customer, String[] requestParams) {
-		// confirm that the correct number of parameters have been input
-		if(requestParams.length == 3) {
-			// confirm that input parameters are valid, and provide prompts to the user if not
-			String userPrompts = "";
-			double depositAmount = 0;
-			try {
-				depositAmount = Double.parseDouble(requestParams[1]);
-				if(depositAmount <= 0) {
-					// a deposit amount must be positive
-					userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-				}
-			} catch (NumberFormatException e) {
-				userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-			}
-			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
-			if(depositAccount == null) {
-				userPrompts += "\nAccount for deposit '" + requestParams[2] + "' does not exist.";
-			}
-			if(userPrompts.length() > 0) {
-				return "Deposit could not be made:" + userPrompts;
-			}
-			// deposit funds into the specified account
-			depositAccount.depositFunds(depositAmount);
-			return depositAmount + " deposited to " + depositAccount.getName() + "\n" + "Current balance in " +
-					depositAccount.toString();
-		} else {
-			return "Invalid entry. Try DEPOSIT <amount> <account name>";
-		}
+		if(requestParams.length!=4) return "Invalid parameters. Please try again.";
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to make deposits. Please contact your admin.";
+		String[] bankDetails = {"PAY",requestParams[1],"Bank Vault",requestParams[2],requestParams[3]};
+		return makePayment(customer,bankDetails);
 	}
 
 	// transfers money between two accounts belonging to the same customer
@@ -317,6 +488,7 @@ public class NewBank {
 	// makes a payment to another customer in the same bank
 	private String makePayment(CustomerID customer, String[] requestParams) {
 		// confirm that the correct number of parameters have been input
+		Integer overdraft = customers.get(customer.getKey()).getOverdraft();
 		if(requestParams.length == 5) {
 			// confirm that input parameters are valid, and provide prompts to the user if not
 			String userPrompts = "";
@@ -328,31 +500,37 @@ public class NewBank {
 					// a transfer amount must be positive
 					userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 					inputsValid = false;
+					return userPrompts;
 				}
 			} catch (NumberFormatException e) {
 				userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
 				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
 				inputsValid = false;
+				return userPrompts;
 			} else if(!withdrawalAccount.canPay) {
 				userPrompts += "\n'" + withdrawalAccount.getName() + "' account cannot perform payments to other customers.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
 				// This doesn't work as expected (returns an infinite loop of "null")
 				// TODO - fixing the invalid username/password issue that is on Trello might solve this problem
-				userPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
+				userPrompts += "Payee '" + requestParams[3] + "' does not exist.";
+				return userPrompts;
 			}
 			Account payeeAccount = payee.getAccount(requestParams[4]);
 			if (payeeAccount == null) {
 				userPrompts += "\nPayee account, '" + requestParams[4] + "' does not exist.";
 			}
-			if(inputsValid && paymentAmount > withdrawalAccount.getBalance()) {
+			if(inputsValid && paymentAmount >= withdrawalAccount.getBalance()-overdraft) {
 				userPrompts += "\nInsufficient funds in " + withdrawalAccount.toString();
+				userPrompts += "\n" + checkoverdraft(customer);
 			}
 			if(userPrompts.length() > 0) {
 				return "Payment could not be made:" + userPrompts;
@@ -363,13 +541,80 @@ public class NewBank {
 			return "Payment of " + paymentAmount + " successfully made.\n" +
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
+		if(requestParams[2].equals("Bank Vault")) return "Invalid entry. Try DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME>";
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
 	}
 
-	// set up a loan and add it to the loans marketplace
-	private String lendMoney(CustomerID customerID, String[] requestParams, Date setupDate) {
+	// determine the interest rate that should be used based on the duration of the loan / savings period
+	private double getInterestRate(int duration) {
+		if (duration < shortTermInterestDuration) {
+			return shortTermInterestRate;
+		} else if (duration < mediumTermInterestDuration) {
+			return mediumTermInterestRate;
+		} else {
+			return longTermInterestRate;
+		}
+	}
+
+	// perform lender eligibility checks
+	private String lenderEligibilityChecks(Customer customer, double lendingAmount, Account lendingAccount) {
+		String userPrompts = "";
+		// check that the customer's account is allowed to lend money
+		if (!lendingAccount.canLoan) {
+			userPrompts += "\n'" + lendingAccount.getName() + "' account cannot loan money to other customers.";
+		}
+		// check that the customer has sufficient funds in the account to cover the loan amount
+		if (lendingAccount.getBalance() < lendingAmount) {
+			userPrompts += "\nInsufficient funds in " + lendingAccount;
+		}
+		// check that the customer is not currently borrowing money
+		if (customer.numLoansReceived() > 0) {
+			userPrompts += "\nYou are not eligible to lend money while you have loans to pay back:" +
+					customer.showLoansReceived(calendar.getTime());
+		}
+		// check that the customer is not trying to offer more loans than is permitted by the bank
+		if (customer.numLoansOffered() == lenderLoanLimit) {
+			userPrompts += "\nThe maximum number of loans you can offer is " + lenderLoanLimit + ". " +
+					"Your current loans are:\n" + customer.showLoansOffered(calendar.getTime());
+		}
+		// check that the customer is not trying to lend more money than is permitted by the bank
+		double customerLending = customer.getTotalLoansOffered();
+		double customerLoanSizeLimit = lenderLoanSizeLimit * (customerLending + customer.getTotalFunds());
+		if (customerLending + lendingAmount > customerLoanSizeLimit) {
+			userPrompts += "\nThe maximum amount of money that you can lend is " + customerLoanSizeLimit +
+					". The total value of loans you have already offered is " + customerLending + ".";
+		}
+		return userPrompts;
+	}
+
+	// perform borrower eligibility checks
+	private String borrowerEligibilityChecks(Customer customer, double borrowingAmount) {
+		String userPrompts = "";
+		double customerBorrowing = customer.getTotalLoansReceived();
+		double customerCollateral = Math.max(0, customer.getTotalFunds() - customerBorrowing);
+		double customerLoanLimit = customerCollateral * borrowerLoanSizeLimit;
+		// check that the customer is not currently lending money
+		if (customer.numLoansOffered() > 0) {
+			userPrompts += "\nYou are not eligible to borrow money while you are lending money:" +
+					customer.showLoansOffered(calendar.getTime());
+		}
+		// check that the customer is not trying to borrow more money than is permitted by the bank
+		if ((customerBorrowing + borrowingAmount) > customerLoanLimit) {
+			userPrompts += "\nThe maximum size of loan you are eligible for is " + customerLoanLimit + " (" +
+					borrowerLoanSizeLimit + " times the non-loan balance held in your accounts).";
+		}
+		// check that the customer is not trying to take out more loans than is permitted by the bank
+		if (customer.numLoansReceived() == borrowerLoanLimit) {
+			userPrompts += "\nThe maximum number of loans you can get is " + borrowerLoanLimit + ". " +
+					"Your current loans are:" + customer.showLoansReceived(calendar.getTime());
+		}
+		return userPrompts;
+	}
+
+	// set up a loan offer and add it to the loans marketplace
+	private String offerLoan(CustomerID customerID, String[] requestParams) {
 		Customer customer = customers.get(customerID.getKey());
-		// confirm that the parameters entered are valid, and provide prompts to the user if not
+		// confirm that the parameters entered are valid, and provide prompts to the customer if not
 		String userPrompts = "";
 		double lendingAmount = 0;
 		int lendingDuration = 0;
@@ -379,7 +624,7 @@ public class NewBank {
 				lendingAmount = Double.parseDouble(requestParams[1]);
 				if (lendingAmount <= 0) {
 					// a lending amount must be positive
-					userPrompts += "\nLending amount '" + requestParams[1] + "' is not valid.";
+					userPrompts += "\nLending amount '" + requestParams[1] + "' must be positive.";
 					inputsValid = false;
 				}
 			} catch (NumberFormatException e) {
@@ -408,48 +653,151 @@ public class NewBank {
 				userPrompts += "\nLending duration '" + requestParams[3] + "' is not valid.";
 				inputsValid = false;
 			}
+			// perform lender eligibility checks and provide prompts to the customer if any criteria are not met
 			if (inputsValid) {
-				if (customer.numLoansOffered() < lenderLoanLimit) {
-					// create a new loan
-					Loan newLoan = new Loan(lendingAccount, lendingAmount, lendingDuration, calendar.getTime());
-					// add loan to customer account
-					customer.offerLoan(newLoan);
-					// add loan to marketplace
-					loanMarketPlace.put(newLoan.getLoanID(), newLoan);
-					// confirm that loan has been set up
-					return "The following loan has been set up:\n" + newLoan.displayDetails();
-				} else {
-					userPrompts += "The maximum number of loans you can offer is " + lenderLoanLimit + ". " +
-							"Your current loans are:\n" + customer.showLoansOffered(calendar.getTime());
-				}
+				userPrompts += lenderEligibilityChecks(customer, lendingAmount, lendingAccount);
 			}
-			return "Loan could not be set up:" + userPrompts;
+			// set up the loan offer if all of the criteria are met
+			if (userPrompts.length() == 0) {
+				// set interest rate
+				double interestRate = getInterestRate(lendingDuration);
+				// create a new loan
+				Loan newLoanOffer = new Loan(lendingAmount, interestRate, lendingDuration, calendar.getTime());
+				// commit funds to the loan
+				newLoanOffer.setLendingAccount(lendingAccount, calendar.getTime());
+				// add loan to customer account
+				customer.offerLoan(newLoanOffer);
+				// add loan offer to marketplace
+				loanOfferMarketPlace.put(newLoanOffer.getLoanID(), newLoanOffer);
+				// confirm that loan offer has been set up
+				return "The following loan offer has been set up:\n" + newLoanOffer.displayDetails();
+			}
+			return "Loan offer could not be set up:" + userPrompts;
 		}
-		return "Invalid entry. Try LEND <amount to lend> <account to lend from> <duration to lend for (weeks)>";
+		return "Invalid entry. Try OFFERLOAN <amount to lend> <account to lend from> <duration (weeks)>";
+	}
+
+	// set up a loan request and add it to the loans marketplace
+	private String requestLoan(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the parameters entered are valid, and provide prompts to the customer if not
+		String userPrompts = "";
+		double borrowingAmount = 0;
+		int borrowingDuration = 0;
+		boolean inputsValid = true;
+		if (requestParams.length == 4) {
+			try {
+				borrowingAmount = Double.parseDouble(requestParams[1]);
+				if (borrowingAmount <= 0) {
+					// a borrowing amount must be positive
+					userPrompts += "\nBorrowing amount '" + requestParams[1] + "' must be positive.";
+					inputsValid = false;
+				}
+			} catch (NumberFormatException e) {
+				userPrompts += "\nBorrowing amount '" + requestParams[1] + "' is not valid.";
+				inputsValid = false;
+			}
+			Account borrowingAccount = customer.getAccount(requestParams[2]);
+			if (borrowingAccount == null) {
+				userPrompts += "\nAccount to receive loan '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
+			}
+			try {
+				borrowingDuration = Integer.parseInt(requestParams[3]);
+				if (borrowingDuration <= 0) {
+					// a borrowing duration must be positive
+					userPrompts += "\nBorrowing duration '" + requestParams[3] + "' must be positive.";
+					inputsValid = false;
+				}
+			} catch (NumberFormatException e) {
+				userPrompts += "\nBorrowing duration '" + requestParams[3] + "' is not valid.";
+				inputsValid = false;
+			}
+			// perform borrower eligibility checks and provide prompts to the customer if any criteria are not met
+			if (inputsValid) {
+				userPrompts += borrowerEligibilityChecks(customer, borrowingAmount);
+			}
+			// set up the loan request if all of the criteria are met
+			if (userPrompts.length() == 0) {
+				// set interest rate
+				double interestRate = getInterestRate(borrowingDuration);
+				// create new loan
+				Loan newLoanRequest = new Loan(borrowingAmount, interestRate, borrowingDuration, calendar.getTime());
+				// link the loan request to the customer's account that has been nominated to receive the loan funds
+				newLoanRequest.setBorrowingAccount(borrowingAccount, calendar.getTime());
+				// add loan to customer account
+				customer.receiveLoan(newLoanRequest);
+				// add loan request to marketplace
+				loanRequestMarketPlace.put(newLoanRequest.getLoanID(), newLoanRequest);
+				// confirm that the loan request has been set up
+				return "The following loan request has been set up:\n" + newLoanRequest.displayDetails();
+			}
+			return "Loan request could not be set up:" + userPrompts;
+		}
+		return "Invalid entry. Try REQUESTLOAN <amount to borrow> <account to receive funds> <duration (weeks)>";
 	}
 
 	// shows all loans available at the bank
 	private String showLoans() {
-		String loanList = "Loans that are currently available\n----------------------------------";
-		for (Loan loan : loanMarketPlace.values()) {
+		String loanList = "LOAN OFFERS:";
+		for (Loan loan : loanOfferMarketPlace.values()) {
 			loanList += "\n" + loan.displayDetails();
 		}
-		if (loanList.length() == 0) {
-			return "No loans currently available.";
-		} else {
-			return loanList;
+		loanList += "\nLOAN REQUESTS:";
+		for (Loan loan : loanRequestMarketPlace.values()) {
+			loanList += "\n" + loan.displayDetails();
 		}
+		return loanList;
 	}
 
-	// allows a customer to take out a loan
-	private String borrowMoney(CustomerID customerID, String[] requestParams) {
+	// allows a customer to fulfill a loan request listed on the marketplace
+	private String lendTo(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the input parameters are valid, and provide prompts to the user if not
+		String userPrompts = "";
+		boolean inputsValid = true;
+		if (requestParams.length == 3) {
+			if (!loanRequestMarketPlace.containsKey(requestParams[1])) {
+				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not a valid loan to lend to.";
+				inputsValid = false;
+			}
+			Account lendingAccount = customer.getAccount(requestParams[2]);
+			if (lendingAccount == null) {
+				userPrompts += "\nAccount to lend money from '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
+			}
+			if (inputsValid) {
+				Loan loan = loanRequestMarketPlace.get(requestParams[1]);
+				double lendingAmount = loan.getLoanValue();
+				// perform lender eligibility checks and provide prompts to the customer if any criteria are not met
+				userPrompts += lenderEligibilityChecks(customer, lendingAmount, lendingAccount);
+				if (userPrompts.length() == 0) {
+					// commit funds to the loan
+					loan.setLendingAccount(lendingAccount, calendar.getTime());
+					// add loan to customer account
+					customer.offerLoan(loan);
+					// remove loan from marketplace
+					loanRequestMarketPlace.remove(loan.getLoanID());
+					// confirm that the loan has successfully started
+					return "The following loan has been started:\n" + loan.displayDetails();
+				} else {
+					return "You are not eligible to lend this loan:" + userPrompts;
+				}
+			}
+			return "Unable to lend loan:" + userPrompts;
+		}
+		return "Invalid entry. Try LENDTO <loan ID> <account to lend from>";
+	}
+
+	// allows a customer to take out a loan offered on the marketplace
+	private String borrowFrom(CustomerID customerID, String[] requestParams) {
 		Customer customer = customers.get(customerID.getKey());
 		// confirm that the parameters are valid, and provide prompts to the user if not
 		String userPrompts = "";
 		boolean inputsValid = true;
 		if (requestParams.length == 3) {
-			if (!loanMarketPlace.containsKey(requestParams[1])) {
-				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
+			if (!loanOfferMarketPlace.containsKey(requestParams[1])) {
+				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid loan to borrow from.";
 				inputsValid = false;
 			}
 			Account borrowingAccount = customer.getAccount(requestParams[2]);
@@ -458,29 +806,19 @@ public class NewBank {
 				inputsValid = false;
 			}
 			if (inputsValid) {
-				// perform eligibility checks for the loan, and provide prompts to the user if criteria are not met
-				Loan loan = loanMarketPlace.get(requestParams[1]);
-				boolean eligibleForLoan = true;
-				// perform eligibility checks
-				if (loan.getLoanValue() > (customer.getTotalFunds() * borrowerLoanSizeLimit)) {
-					userPrompts += "\nThe maximum size of loan you are eligible for is " +
-							(borrowerLoanSizeLimit * customer.getTotalFunds()) + " (" +
-							borrowerLoanSizeLimit + " times the total amount of money held in your accounts).";
-					eligibleForLoan = false;
-				}
-				if (customer.numLoansReceived() == borrowerLoanLimit) {
-					userPrompts += "\nThe maximum number of loans you can get is " + borrowerLoanLimit + ". " +
-							"Your current loans are:" + customer.showLoansReceived(calendar.getTime());
-					eligibleForLoan = false;
-				}
-				if (eligibleForLoan) {
+				Loan loan = loanOfferMarketPlace.get(requestParams[1]);
+				double borrowingAmount = loan.getLoanValue();
+				// perform borrower eligibility checks and provide prompts to the customer if any criteria are not met
+				userPrompts += borrowerEligibilityChecks(customer, borrowingAmount);
+				// grant access to the loan if all of the criteria are met
+				if (userPrompts.length() == 0) {
 					// accept loan and transfer funds to the borrowing account
-					loan.acceptLoan(borrowingAccount, calendar.getTime());
+					loan.setBorrowingAccount(borrowingAccount, calendar.getTime());
 					// add loan to customer account
 					customer.receiveLoan(loan);
 					// remove loan from marketplace
-					loanMarketPlace.remove(loan.getLoanID());
-					// confirm that loan has been successfully received
+					loanOfferMarketPlace.remove(loan.getLoanID());
+					// confirm that the loan has been successfully received
 					return "The following loan has been received:\n" + loan.displayDetails();
 				} else {
 					return "You are not eligible for this loan:" + userPrompts;
@@ -488,7 +826,7 @@ public class NewBank {
 			}
 			return "Unable to take out loan:" + userPrompts;
 		}
-		return "Invalid entry. Try BORROW <loan ID> <account to pay into>";
+		return "Invalid entry. Try BORROWFROM <loan ID> <account to pay into>";
 	}
 
 	// allows a customer to make a repayment on their loan
@@ -499,7 +837,7 @@ public class NewBank {
 		double repaymentAmount = 0;
 		boolean inputsValid = true;
 		if (requestParams.length == 4) {
-			Loan loanToRepay = customer.getLoan(requestParams[1]);
+			Loan loanToRepay = customer.getBorrowedLoan(requestParams[1]);
 			if (loanToRepay == null) {
 				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
@@ -546,6 +884,48 @@ public class NewBank {
 			return "Unable to make repayment on loan:" + userPrompts;
 		}
 		return "Invalid entry. Try REPAY <Loan ID> <amount to repay> <account to pay from>";
+	}
+
+	// removes a loan from a customer's account provided that there is no money to be repaid
+	private String removeLoan(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the input parameters are valid and provide prompts to the user if not
+		if (requestParams.length == 2) {
+			String loanID = requestParams[1];
+			if (customer.getBorrowedLoan(loanID) != null) {
+				Loan loan = customer.getBorrowedLoan(loanID);
+				// confirm that there is no money to be repaid on the loan
+				if (loan.loanFinished || !loan.loanStarted) {
+					// remove loan from customer loans received list
+					customer.removeLoan(loanID);
+					// remove loan from marketplace if it is still there
+					loanOfferMarketPlace.remove(loanID);
+					loanRequestMarketPlace.remove(loanID);
+					return loanID + " has been removed from your account.";
+				} else {
+					return "Loan cannot be removed as there is still an outstanding balance to be repaid.";
+				}
+			} else if (customer.getLentLoan(loanID) != null) {
+				Loan loan = customer.getLentLoan(loanID);
+				// confirm that there is no money to be repaid on the loan
+				if (loan.loanFinished || !loan.loanStarted) {
+					if (!loan.loanStarted) {
+						loan.cancelLoan(); // repay the loan balance to the lender
+					}
+					// remove loan from customer loans received list
+					customer.removeLoan(loanID);
+					// remove loan from marketplace if it is still there
+					loanOfferMarketPlace.remove(loanID);
+					loanRequestMarketPlace.remove(loanID);
+					return loanID + " has been removed from your account.";
+				} else {
+					return "Loan cannot be removed as there is still an outstanding balance to be repaid.";
+				}
+			} else {
+				return "'" + loanID + "' is not a valid loan ID for any of the loans associated with your account.";
+			}
+		}
+		return "Invalid input. Try REMOVELOAN <loan ID>";
 	}
 
 	// skips ahead by a specified number of days to a future date in the bank's calendar

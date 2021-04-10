@@ -7,40 +7,60 @@ import java.lang.Math;
 public class Loan {
 
     private static int ID = 1;
-    private String loanID;
-    private Account lendingAccount;
-    private double principalAmount;
+    private final String loanID;
+    private Account lendingAccount = null; // account to send loan repayments to
+    private Account borrowingAccount = null; // account to deposit loan into
+    private final double principalAmount;
+    private final int loanDuration; // weeks
     private int remainingDuration; // weeks
-    private double interestRate;
+    private final double interestRate; // decimal
     private double repaymentAmount;
     private double totalInterestAccrued;
-    private boolean loanActive;
-    private Date repaymentDeadline; // TODO - have some kind of penalty for missing the repayment deadline?
+    private boolean fundsCommitted = false;
+    private Date repaymentDeadline;
     private Date lastUpdated;
+    public boolean loanStarted;
+    public boolean loanFinished;
 
-    // a customer who wishes to lend money can set up a loan
-    public Loan(Account lendingAccount, double principalAmount, int duration, Date setupDate) {
-        // take input information
-        this.lendingAccount = lendingAccount;
+    // a loan can be set up by a customer who wants to lend money, or a customer who wants to borrow money
+    public Loan(double principalAmount, double interestRate, int duration, Date setupDate) {
         this.principalAmount = principalAmount;
         this.repaymentAmount = principalAmount;
+        this.interestRate = interestRate;
+        this.loanDuration = duration;
         this.remainingDuration = duration;
-        // set a unique ID for the loan
+        this.lastUpdated = setupDate;
+        this.loanStarted = false;
+        this.loanFinished = false;
         loanID = "Loan" + ID;
         ID++;
-        // The annual rate of interest (in decimal) is chosen based on the loan duration (in weeks)
-        // TODO - make it possible for the bank to change the interest rates (probably take out of this class)
-        if (duration < 4) {
-            interestRate = 0.05;
-        } else if (duration < 12) {
-            interestRate = 0.04;
-        } else {
-            interestRate = 0.03;
+    }
+
+    // assigns a lending account to commit funds to the loan and/or receive loan repayments
+    public void setLendingAccount(Account lendingAccount, Date startDate) {
+        this.lendingAccount = lendingAccount;
+        if (!fundsCommitted) {
+            this.lendingAccount.withdrawFunds(principalAmount);
+            fundsCommitted = true;
         }
-        // commit funds to the loan
-        this.lendingAccount.withdrawFunds(principalAmount);
-        this.lastUpdated = setupDate;
-        this.loanActive = false;
+        // if there is already a borrowing account assigned, the funds are deposited and the loan starts
+        if (borrowingAccount != null) {
+            startLoan(borrowingAccount, startDate);
+        }
+    }
+
+    // assigns a borrowing account to receive the loan payment
+    public void setBorrowingAccount(Account borrowingAccount, Date startDate) {
+        this.borrowingAccount = borrowingAccount;
+        // if there is already a lending account assigned, the funds are deposited and the loan starts
+        if (lendingAccount != null) {
+            startLoan(this.borrowingAccount, startDate);
+        }
+    }
+
+    // rounds a number to two decimal places
+    private double currencyNum(double number) {
+        return Math.round(number * 100) / 100.0;
     }
 
     // display details about the loan
@@ -51,14 +71,14 @@ public class Loan {
 
     // display status of the loan for the lender
     public String displayLenderDetails(Date currentDate) {
-        refreshInterestCalculation(currentDate); // required to refresh interest accrued value
-        return loanID + ": " + principalAmount + " lent, " + totalInterestAccrued + " interest earned.";
+        refreshLoanData(currentDate); // required to refresh interest accrued value
+        return loanID + ": " + principalAmount + " lent, " + currencyNum(totalInterestAccrued) + " interest earned.";
     }
 
     // display status of the loan for the borrower
     public String displayBorrowerDetails(Date currentDate) {
-        refreshInterestCalculation(currentDate);
-        return loanID + ": " + principalAmount + " borrowed, " + repaymentAmount + " left to pay.";
+        refreshLoanData(currentDate);
+        return loanID + ": " + principalAmount + " borrowed, " + currencyNum(repaymentAmount) + " left to pay.";
     }
 
     // return the loanID
@@ -72,36 +92,55 @@ public class Loan {
     }
 
     // a customer who wishes to borrow money can accept a loan
-    public void acceptLoan(Account borrowingAccount, Date startDate) {
-        // transfer loan to account
+    private void startLoan(Account borrowingAccount, Date startDate) {
         borrowingAccount.depositFunds(principalAmount);
-        // set the repayment deadline
-        Calendar repaymentCalendar = Calendar.getInstance();
-        repaymentCalendar.setTime(startDate);
-        lastUpdated = repaymentCalendar.getTime();
-        repaymentCalendar.add(repaymentCalendar.DATE, (remainingDuration * 7));
-        repaymentDeadline = repaymentCalendar.getTime();
-        loanActive = true;
+        setRepaymentDeadline(startDate);
+        lastUpdated = startDate;
+        loanStarted = true;
     }
 
-    // update the outstanding balance on the loan
-    private void refreshInterestCalculation(Date currentDate) {
-        if (loanActive) {
-            // determine the period (in days) since the repayment amount was last calculated
-            double interestPeriod = Math.floor((currentDate.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));
-            // calculate a new repayment amount that includes the interest since the previous calculation
+    // set or update the repayment deadline for the loan
+    private void setRepaymentDeadline(Date startDate) {
+        Calendar repaymentCalendar = Calendar.getInstance();
+        repaymentCalendar.setTime(startDate);
+        repaymentCalendar.add(Calendar.DATE, (loanDuration * 7));
+        repaymentDeadline = repaymentCalendar.getTime();
+    }
+
+    // add interest accrued over a specified period to the repayment amount
+    private void calculateInterest(Date startDate, Date endDate) {
+        long timeElapsed = endDate.getTime() - startDate.getTime(); // milliseconds
+        int interestPeriod = (int) timeElapsed / (1000 * 60 * 60 * 24); // days
+        repaymentAmount *= Math.pow((1 + (interestRate/365.24)), interestPeriod);
+    }
+
+    // update the outstanding balance on the loan, the time remaining, and the total interest accrued
+    private void refreshLoanData(Date currentDate) {
+        if (loanStarted) {
             double previousRepaymentAmount = repaymentAmount;
-            repaymentAmount *= Math.pow((1 + (interestRate/365.24)), interestPeriod);
-            System.out.println("New Repayment Amount = " + repaymentAmount);
-            totalInterestAccrued += repaymentAmount - previousRepaymentAmount;
+            // apply a late repayment penalty if required
+            while (currentDate.after(repaymentDeadline)) {
+                // add interest accrued up to the repayment deadline
+                calculateInterest(lastUpdated, repaymentDeadline);
+                // apply late repayment penalty
+                repaymentAmount += principalAmount * interestRate;
+                // update repayment deadline (the extension provided is equal to the original loan duration)
+                lastUpdated = repaymentDeadline;
+                setRepaymentDeadline(repaymentDeadline);
+            }
+            // add interest accrued up to the current date
+            calculateInterest(lastUpdated, currentDate);
+            // update loan information
             lastUpdated = currentDate;
+            remainingDuration = (int) (repaymentDeadline.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 7);
+            totalInterestAccrued += repaymentAmount - previousRepaymentAmount;
         }
     }
 
     // return the outstanding balance on the loan
     public double getRepaymentAmount(Date currentDate) {
-        refreshInterestCalculation(currentDate);
-        return repaymentAmount;
+        refreshLoanData(currentDate);
+        return currencyNum(repaymentAmount);
     }
 
     // make a repayment on the loan
@@ -109,7 +148,17 @@ public class Loan {
         repaymentAccount.withdrawFunds(repayment);
         lendingAccount.depositFunds(repayment);
         repaymentAmount -= repayment;
+        if (currencyNum(repaymentAmount) == 0) {
+            loanFinished = true;
+        }
         lastUpdated = currentDate;
+    }
+
+    // return the loan funds to the lender
+    public void cancelLoan() {
+        if (!loanStarted) {
+            lendingAccount.depositFunds(principalAmount);
+        }
     }
 
 }

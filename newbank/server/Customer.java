@@ -9,7 +9,73 @@ public class Customer {
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
+
+	private Boolean isAdmin = false;
+	private Integer overdraft = 0;
 	
+	public Integer getOverdraft() {
+		return overdraft;
+	}
+
+	public void setOverdraft(Integer overdraft) {
+		this.overdraft = overdraft;
+	}
+
+	public Boolean getIsAdmin() {
+		return isAdmin;
+	}
+
+	public void setIsAdmin(Boolean admin) {
+		this.isAdmin = admin;
+
+	private String phoneNo = null; // mobile
+	private String landlinePhoneNo = null;
+	
+	public String getLandlinePhoneNo() {
+		return landlinePhoneNo;
+	}
+
+	public void setLandlinePhoneNo(String landlinePhoneNo) {
+		this.landlinePhoneNo = landlinePhoneNo;
+	}
+
+	private String address = null;
+	private String emailAddress = null;
+	private String postcode = null;
+	
+	public String getPostcode() {
+		return postcode;
+	}
+
+	public void setPostcode(String postcode) {
+		this.postcode = postcode;
+	}
+
+	public String getPhoneNo() {
+		return phoneNo;
+	}
+
+	public void setPhoneNo(String phoneNo) {
+		this.phoneNo = phoneNo;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getEmailAddress() {
+		return emailAddress;
+	}
+
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
+
+	}
+
 	public Customer(String password) {
 		accounts = new ArrayList<>();
 		currentLoansOffered = new ArrayList<>();
@@ -63,6 +129,24 @@ public class Customer {
 			totalFunds += account.getBalance();
 		}
 		return totalFunds;
+	}
+
+	// return the total amount of money loaned to other customers
+	public double getTotalLoansOffered() {
+		double totalLoansOffered = 0;
+		for (Loan loan : currentLoansOffered) {
+			totalLoansOffered += loan.getLoanValue();
+		}
+		return totalLoansOffered;
+	}
+
+	// return the total amount of money borrowed from other customers
+	public double getTotalLoansReceived() {
+		double totalLoansReceived = 0;
+		for (Loan loan : currentLoansReceived) {
+			totalLoansReceived += loan.getLoanValue();
+		}
+		return totalLoansReceived;
 	}
 
 	// return a requested customer account if it exists (or null if not)
@@ -122,13 +206,37 @@ public class Customer {
 	}
 
 	// retrieves a loan that the customer has taken out
-	public Loan getLoan(String loanID) {
+	public Loan getBorrowedLoan(String loanID) {
 		for (Loan loan : currentLoansReceived) {
 			if (loan.getLoanID().equals(loanID)) {
 				return loan;
 			}
 		}
 		return null;
+	}
+
+	// retrieves a loan that the customer has lent
+	public Loan getLentLoan(String loanID) {
+		for (Loan loan : currentLoansOffered) {
+			if (loan.getLoanID().equals(loanID)) {
+				return loan;
+			}
+		}
+		return null;
+	}
+
+	// removes a loan from the customer's account
+	public void removeLoan(String loanID) {
+		for (int index = 0; index < currentLoansOffered.size(); index++) {
+			if (currentLoansOffered.get(index).getLoanID().equals(loanID)) {
+				currentLoansOffered.remove(index);
+			}
+		}
+		for (int index = 0; index < currentLoansReceived.size(); index++) {
+			if (currentLoansReceived.get(index).getLoanID().equals(loanID)) {
+				currentLoansReceived.remove(index);
+			}
+		}
 	}
 
 }
