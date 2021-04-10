@@ -6,6 +6,8 @@ import java.lang.Double;
 import java.lang.Integer;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class NewBank {
 
@@ -16,6 +18,9 @@ public class NewBank {
 	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
 	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
 	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+	private static final String sortCode = "07-16-18";
+	private static int accountNumberCurrent;
+	private static ArrayList<Integer> accountNumberList;
 
 	// data structures for bank
 	private HashMap<String,Customer> customers; // place to store all customer data
@@ -25,10 +30,14 @@ public class NewBank {
 	private NewBank() {
 		customers = new HashMap<>();
 		loanMarketPlace = new HashMap<>();
+		accountNumberList = new ArrayList<>();
 		addTestData();
 	}
-	
+
 	private void addTestData() {
+		//initial starting account number
+		accountNumberCurrent = 77771234;
+
 		Customer bhagy = new Customer("bhagy1234");
 		bhagy.addAccount(new BankVault("BankVault", 1000000.0));
 		bhagy.setPassword("test1234");
@@ -36,12 +45,12 @@ public class NewBank {
 		bhagy.setIsAdmin(true);
 		
 		Customer christina = new Customer("christina5678");
-		christina.addAccount(new SavingsAccount("Savings", 1500.0));
+		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new CheckingAccount("Checking", 250.0));
+		john.addAccount(new CheckingAccount(sortCode, assignAccountNumber(), "Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -112,8 +121,20 @@ public class NewBank {
 					return timeTravel(requestParams);
 				case "LOGOUT":
 					return "LOGOUT";
+				case "SHOWCONTACTDETAILS":
+					return showContactDetails(customer, requestParams);
+				case "CHANGEPOSTCODE":
+					return changePostcode(customer, requestParams);
+				case "CHANGEMYADDRESS":
+					return changeAddress(customer, requestParams);
+				case "CHANGEMYEMAIL":
+					return changeEmail(customer, requestParams);
+				case "CHANGEMYMOBILE":
+					return changeMobilePhone(customer, requestParams);
+				case "CHANGEMYLANDLINE":
+					return changeLandlinePhone(customer, requestParams);
 				default:
-					return "FAIL"; // TODO - should we rewrite this to 'Not a valid command, type in "HELP"...'?
+					return "Invalid input. Please try again or type 'HELP' for available options.";
 			}
 		}
 		return "FAIL";
@@ -135,6 +156,7 @@ public class NewBank {
 		return accountData;
 	}
 	
+
 	private String overdraft(CustomerID customer, String[] requestParams) {
 		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to change overdraft limits. Please contact your admin.";
 		if(requestParams.length!=3) return "Invalid entry.";
@@ -152,6 +174,113 @@ public class NewBank {
 	
 	private String checkoverdraft(CustomerID customer) {
 		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
+
+	private String showContactDetails(CustomerID customer, String[] requestParams) {
+		if(requestParams.length > 1) return "Incorrect format.";
+		String details = "";
+		String address = customers.get(customer.getKey()).getAddress();
+		String postcode = customers.get(customer.getKey()).getPostcode();
+		String phone = customers.get(customer.getKey()).getPhoneNo();
+		String landline = customers.get(customer.getKey()).getLandlinePhoneNo();
+		String email = customers.get(customer.getKey()).getEmailAddress();
+		
+		if(address == null && postcode == null && phone == null && email == null && landline == null) {
+			return "No contact details have been added yet.";
+		}
+		details += "Contact Details\n---------------";
+		if(address!=null) {
+			details += "\nAddress: " + address;
+		}
+		if(postcode!=null) {
+			details += "\nPostcode: " + postcode;
+		}
+		if(phone!=null) {
+			details += "\nMobile phone no: " + phone;
+		}
+		if(landline!=null) {
+			details += "\nLandline phone no: " + landline;
+		}
+		if(email!=null) {
+			details += "\nEmail address: " + email;
+		}
+		return details;
+	}
+	
+	private String changeAddress(CustomerID customer, String[] requestParams) {	
+		String address = "";
+		if(requestParams.length > 1) {		
+			for(int i=1;i<requestParams.length;i++) {
+				address += requestParams[i];
+				if(i!=requestParams.length-1) address += " ";
+			}
+			customers.get(customer.getKey()).setAddress(address);
+			return "Address changed to " + address + ".";
+		}
+		return "Incorrect format.";
+	}
+	
+	private String changePostcode(CustomerID customer, String[] requestParams) {
+		// Regex based on assets.publishing.service.gov.uk
+		String postcode;
+		if(requestParams.length == 3) {
+			postcode = requestParams[1] + " " + requestParams[2];	
+			String regex = "^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(postcode);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setPostcode(postcode);
+				return "Postcode changed to " + postcode + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+	
+	private String changeEmail(CustomerID customer, String[] requestParams) {
+		if(requestParams.length == 2){
+			// Regex based on https://www.regular-expressions.info/email.html
+			String regex = "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b";
+			Pattern pattern = Pattern.compile(regex);
+			Matcher matcher = pattern.matcher(requestParams[1]);
+			if(matcher.matches()) {
+				customers.get(customer.getKey()).setEmailAddress(requestParams[1]);
+				return "Email address changed to " + requestParams[1] + ".";
+			}
+		}
+		return "Incorrect format.";
+	}
+	
+	private String changeMobilePhone(CustomerID customer, String[] requestParams) {	
+		String phone = "";	
+		if(requestParams.length > 1) {		
+			for(int i=1;i<requestParams.length;i++) {
+				phone += requestParams[i];
+			}
+		} else {
+			return "Incorrect format.";
+		}		
+		// Regex based on https://www.regextester.com/104299
+		String regex = "((\\+44(\\s\\(0\\)\\s|\\s0\\s|\\s)?)|0)7\\d{3}(\\s)?\\d{6}";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setPhoneNo(phone);
+			return "Phone number changed to " + phone + ".";
+		}
+		return "Incorrect format.";			
+	}
+	
+	private String changeLandlinePhone(CustomerID customer, String[] requestParams) {	
+		if(requestParams.length!=4) return "Incorrect format.";
+		String phone = requestParams[1] + " " + requestParams[2] + " " + requestParams[3];	
+		// Regex based on https://regexlib.com/
+		String regex = "^((\\(?0\\d{4}\\)?\\s?\\d{3}\\s?\\d{3})|(\\(?0\\d{3}\\)?\\s?\\d{3}\\s?\\d{4})|(\\(?0\\d{2}\\)?\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(phone);
+		if(matcher.matches()) {
+			customers.get(customer.getKey()).setLandlinePhoneNo(phone);
+			return "Landline phone number changed to " + phone + ".";
+		}
+		return "Incorrect format.";
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -162,7 +291,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new SavingsAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new SavingsAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -177,7 +306,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new CheckingAccount(accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new CheckingAccount(sortCode, assignAccountNumber(), accountName,0.00));
 				return "Account created: " + accountName;
 			}
 		}
@@ -188,6 +317,17 @@ public class NewBank {
 	private boolean isNumeric(String string) {
 		String regex = "-?\\d+(\\.\\d+)?";
 		return Pattern.matches(regex, string);
+	}
+
+	private int assignAccountNumber() {
+		Random r = new Random();
+		//generate a random account number that is not in current list
+		while (accountNumberList.contains(accountNumberCurrent)) {
+			accountNumberCurrent = r.nextInt((79999999-70000000) + 1) + 70000000;
+		}
+		accountNumberList.add(accountNumberCurrent);
+		System.out.println("Account number assigned: " + accountNumberCurrent);
+		return accountNumberCurrent;
 	}
 
 	private boolean accountNameBlockList(String string) {
@@ -222,52 +362,25 @@ public class NewBank {
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
-				"LOGOUT - Logs you out from the NewBank command line application.\n" +
-				"*********** ADMIN ONLY ***********\n" +
+				"SHOWCONTACTDETAILS - shows all contact details.\n" +				
+				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
+				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\n" +
+				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
+				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
+				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
+				"LOGOUT - Logs you out from the NewBank command line application.";
+    		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
 				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
 	}
 
-	// deposits money into a specified account
-	/* SUPERSEDED METHOD
 	private String depositFunds(CustomerID customer, String[] requestParams) {
-		// confirm that the correct number of parameters have been input
-		if(requestParams.length == 3) {
-			// confirm that input parameters are valid, and provide prompts to the user if not
-			String userPrompts = "";
-			double depositAmount = 0;
-			try {
-				depositAmount = Double.parseDouble(requestParams[1]);
-				if(depositAmount <= 0) {
-					// a deposit amount must be positive
-					userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-				}
-			} catch (NumberFormatException e) {
-				userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-			}
-			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
-			if(depositAccount == null) {
-				userPrompts += "\nAccount for deposit '" + requestParams[2] + "' does not exist.";
-			}
-			if(userPrompts.length() > 0) {
-				return "Deposit could not be made:" + userPrompts;
-			}
-			// deposit funds into the specified account
-			depositAccount.depositFunds(depositAmount);
-			return depositAmount + " deposited to " + depositAccount.getName() + "\n" + "Current balance in " +
-					depositAccount.toString();
-		} else {
-			return "Invalid entry. Try DEPOSIT <amount> <account name>";
-		}
-	}
-	*/
-	private String depositFunds(CustomerID customer, String[] requestParams) {
+		if(requestParams.length!=4) return "Invalid parameters. Please try again.";
 		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to make deposits. Please contact your admin.";
 		String[] bankDetails = {"PAY",requestParams[1],"Bank Vault",requestParams[2],requestParams[3]};
 		return makePayment(customer,bankDetails);
 	}
-	
 
 	// transfers money between two accounts belonging to the same customer
 	private String transferFunds(CustomerID customer, String[] requestParams) {
@@ -338,24 +451,29 @@ public class NewBank {
 					// a transfer amount must be positive
 					userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 					inputsValid = false;
+					return userPrompts;
 				}
 			} catch (NumberFormatException e) {
 				userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
 				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
 				inputsValid = false;
+				return userPrompts;
 			} else if(!withdrawalAccount.canPay) {
 				userPrompts += "\n'" + withdrawalAccount.getName() + "' account cannot perform payments to other customers.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
 				// This doesn't work as expected (returns an infinite loop of "null")
 				// TODO - fixing the invalid username/password issue that is on Trello might solve this problem
-				userPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
+				userPrompts += "Payee '" + requestParams[3] + "' does not exist.";
+				return userPrompts;
 			}
 			Account payeeAccount = payee.getAccount(requestParams[4]);
 			if (payeeAccount == null) {
@@ -374,6 +492,7 @@ public class NewBank {
 			return "Payment of " + paymentAmount + " successfully made.\n" +
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
+		if(requestParams[2].equals("Bank Vault")) return "Invalid entry. Try DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME>";
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
 	}
 

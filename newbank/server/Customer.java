@@ -9,6 +9,7 @@ public class Customer {
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
+
 	private Boolean isAdmin = false;
 	private Integer overdraft = 0;
 	
@@ -26,6 +27,53 @@ public class Customer {
 
 	public void setIsAdmin(Boolean admin) {
 		this.isAdmin = admin;
+
+	private String phoneNo = null; // mobile
+	private String landlinePhoneNo = null;
+	
+	public String getLandlinePhoneNo() {
+		return landlinePhoneNo;
+	}
+
+	public void setLandlinePhoneNo(String landlinePhoneNo) {
+		this.landlinePhoneNo = landlinePhoneNo;
+	}
+
+	private String address = null;
+	private String emailAddress = null;
+	private String postcode = null;
+	
+	public String getPostcode() {
+		return postcode;
+	}
+
+	public void setPostcode(String postcode) {
+		this.postcode = postcode;
+	}
+
+	public String getPhoneNo() {
+		return phoneNo;
+	}
+
+	public void setPhoneNo(String phoneNo) {
+		this.phoneNo = phoneNo;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getEmailAddress() {
+		return emailAddress;
+	}
+
+	public void setEmailAddress(String emailAddress) {
+		this.emailAddress = emailAddress;
+
 	}
 
 	public Customer(String password) {

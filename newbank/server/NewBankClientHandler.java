@@ -131,10 +131,6 @@ public class NewBankClientHandler extends Thread {
 
     private CustomerID createUserAndAccount() {
         CustomerID user = createAccount();
-        /*
-        String[] accName = {"NEWACCOUNT","current"};
-        bank.newCurrentAccount(user, accName);
-        */
         return user;
     }
 
