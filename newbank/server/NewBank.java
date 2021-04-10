@@ -90,7 +90,7 @@ public class NewBank {
 					return newSavingsAccount(customer, requestParams);
 				case "NEWCHECKINGACCOUNT":
 					return newCheckingAccount(customer, requestParams);
-				case "RENAMEACC":
+				case "RENAMEACCOUNT":
 					return renameAccounts(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
@@ -134,30 +134,24 @@ public class NewBank {
 	}
 	
 	private String renameAccounts(CustomerID customer, String[] requestParams) {
-		String current = requestParams[1];
-		String renamed = requestParams[2];
-		Account tempAcc;
-		ArrayList<Account> changed_accounts = new ArrayList<Account>();
-		if(requestParams.length == 3) {	
-			ArrayList<Account> accounts = customers.get(customer.getKey()).getAccounts();		
-			for(Account account:accounts) {
+		String current;
+		String renamed;
+		if(requestParams.length != 3) {
+			return "Invalid input. Try again";
+		} else {
+			current = requestParams[1];
+			renamed = requestParams[2];
+			for(Account account : customers.get(customer.getKey()).getAccounts()) {
 				if(account.getName().equals(renamed)) {
-					return "Account name already exists.";
+					return "Account name already exists. Try again with a unique name.";
 				}
-				if(account.getName().equals(current)) {
-					if(account.accountType.equals("Savings")) {
-						tempAcc = new SavingsAccount(account);
-					} else {
-						tempAcc = new CheckingAccount(account);
-					}
-					tempAcc.setName(renamed);
-					changed_accounts.add(tempAcc);
-				} else {
-					changed_accounts.add(account);
-				}
-			}		
+			}
+			if(customers.get(customer.getKey()).getAccount(current) != null) {
+				customers.get(customer.getKey()).getAccount(current).setName(renamed);
+			} else {
+				return "Account does not exist. Check the spelling and try again.";
+			}
 		}
-		customers.get(customer.getKey()).setAccounts(changed_accounts);
 		return "Account name changed from " + current + " to " + renamed;
 	}
 
@@ -216,7 +210,7 @@ public class NewBank {
 				"you would like to give to the account.\n" +
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
-				"RENAMEACC <CURRENT-NAME> <NEW-NAME> - rename your account\n" +
+				"RENAMEACCOUNT <CURRENT-NAME> <NEW-NAME> - rename your account\n" +
 				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
 				"added, then the account name to deposit funds to.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +

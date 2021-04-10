@@ -9,11 +9,5 @@ public class SavingsAccount extends Account {
         this.accountType = "Savings";
     }
     //TODO - Savings Accounts could be associated with an interest rate set by the bank
-    
-	public SavingsAccount(Account account) {
-		super(account);
-        this.canPay = account.canPay;
-        this.canLoan = account.canLoan;
-        this.accountType = account.accountType;
-	}
+
 }
