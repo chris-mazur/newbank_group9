@@ -9,6 +9,16 @@ public class Customer {
 	private ArrayList<Loan> currentLoansOffered; // keep a record of all loans currently offered to other customers
 	private ArrayList<Loan> currentLoansReceived; // keep a record of all outstanding loans to be paid back
 	private String password;
+
+	private Boolean isAdmin = false;
+	
+	public Boolean getIsAdmin() {
+		return isAdmin;
+	}
+
+	public void setIsAdmin(Boolean admin) {
+		this.isAdmin = admin;
+
 	private String phoneNo = null; // mobile
 	private String landlinePhoneNo = null;
 	
@@ -54,6 +64,7 @@ public class Customer {
 
 	public void setEmailAddress(String emailAddress) {
 		this.emailAddress = emailAddress;
+
 	}
 
 	public Customer(String password) {
