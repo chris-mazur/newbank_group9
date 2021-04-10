@@ -4,8 +4,9 @@ import java.time.LocalDateTime;
 
 public class Transaction {
 
-    private static Integer id;
+    public static Integer id = 0;
     private final LocalDateTime date = LocalDateTime.now();
+    private Integer transactionId;
     private String payer;
     private String payeeAccountName;
     private String payee;
@@ -18,22 +19,21 @@ public class Transaction {
         this.payee = payee;
         this.beneficiaryAccountName = beneficiaryAccountName;
         this.amount = amount;
+        this.transactionId = Transaction.id;
+        Transaction.id++;
     }
 
     @Override
     public String toString() {
         return "Transaction{" +
-                "date=" + date +
-                ", payee='" + payer + '\'' +
+                "id=" + transactionId +
+                ", date=" + date +
+                ", payer='" + payer + '\'' +
                 ", payeeAccountName='" + payeeAccountName + '\'' +
-                ", beneficiary='" + payee + '\'' +
+                ", payee='" + payee + '\'' +
                 ", beneficiaryAccountName='" + beneficiaryAccountName + '\'' +
                 ", amount=" + amount +
                 '}';
-    }
-
-    public static Integer getId() {
-        return id;
     }
 
     public LocalDateTime getDate() {
