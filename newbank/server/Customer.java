@@ -27,6 +27,7 @@ public class Customer {
 
 	public void setIsAdmin(Boolean admin) {
 		this.isAdmin = admin;
+	}
 
 	private String phoneNo = null; // mobile
 	private String landlinePhoneNo = null;
