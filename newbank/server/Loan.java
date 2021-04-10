@@ -8,33 +8,52 @@ public class Loan {
 
     private static int ID = 1;
     private final String loanID;
-    private final Account lendingAccount;
+    private Account lendingAccount = null; // account to send loan repayments to
+    private Account borrowingAccount = null; // account to deposit loan into
     private final double principalAmount;
     private final int loanDuration; // weeks
     private int remainingDuration; // weeks
-    private final double interestRate;
+    private final double interestRate; // decimal
     private double repaymentAmount;
     private double totalInterestAccrued;
+    private boolean fundsCommitted = false;
     private boolean loanActive;
     private Date repaymentDeadline;
     private Date lastUpdated;
 
-    // a customer who wishes to lend money can set up a loan
-    public Loan(Account lendingAccount, double principalAmount, double interestRate, int duration, Date setupDate) {
-        // take input information
-        this.lendingAccount = lendingAccount;
+    // a loan can be set up by a customer who wants to lend money, or a customer who wants to borrow money
+    public Loan(double principalAmount, double interestRate, int duration, Date setupDate) {
         this.principalAmount = principalAmount;
         this.repaymentAmount = principalAmount;
         this.interestRate = interestRate;
         this.loanDuration = duration;
         this.remainingDuration = duration;
-        // set a unique ID for the loan
-        loanID = "Loan" + ID;
-        ID++;
-        // commit funds to the loan
-        this.lendingAccount.withdrawFunds(principalAmount);
         this.lastUpdated = setupDate;
         this.loanActive = false;
+        loanID = "Loan" + ID;
+        ID++;
+    }
+
+    // assigns a lending account to commit funds to the loan and/or receive loan repayments
+    public void setLendingAccount(Account lendingAccount, Date startDate) {
+        this.lendingAccount = lendingAccount;
+        if (!fundsCommitted) {
+            this.lendingAccount.withdrawFunds(principalAmount);
+            fundsCommitted = true;
+        }
+        // if there is already a borrowing account assigned, the funds are deposited and the loan starts
+        if (borrowingAccount != null) {
+            startLoan(borrowingAccount, startDate);
+        }
+    }
+
+    // assigns a borrowing account to receive the loan payment
+    public void setBorrowingAccount(Account borrowingAccount, Date startDate) {
+        this.borrowingAccount = borrowingAccount;
+        // if there is already a lending account assigned, the funds are deposited and the loan starts
+        if (lendingAccount != null) {
+            startLoan(this.borrowingAccount, startDate);
+        }
     }
 
     // rounds a number to two decimal places
@@ -71,7 +90,7 @@ public class Loan {
     }
 
     // a customer who wishes to borrow money can accept a loan
-    public void acceptLoan(Account borrowingAccount, Date startDate) {
+    private void startLoan(Account borrowingAccount, Date startDate) {
         borrowingAccount.depositFunds(principalAmount);
         setRepaymentDeadline(startDate);
         lastUpdated = startDate;
