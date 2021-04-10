@@ -131,6 +131,24 @@ public class Customer {
 		return totalFunds;
 	}
 
+	// return the total amount of money loaned to other customers
+	public double getTotalLoansOffered() {
+		double totalLoansOffered = 0;
+		for (Loan loan : currentLoansOffered) {
+			totalLoansOffered += loan.getLoanValue();
+		}
+		return totalLoansOffered;
+	}
+
+	// return the total amount of money borrowed from other customers
+	public double getTotalLoansReceived() {
+		double totalLoansReceived = 0;
+		for (Loan loan : currentLoansReceived) {
+			totalLoansReceived += loan.getLoanValue();
+		}
+		return totalLoansReceived;
+	}
+
 	// return a requested customer account if it exists (or null if not)
 	public Account getAccount(String accountName) {
 		for(Account account : accounts) {
@@ -180,13 +198,37 @@ public class Customer {
 	}
 
 	// retrieves a loan that the customer has taken out
-	public Loan getLoan(String loanID) {
+	public Loan getBorrowedLoan(String loanID) {
 		for (Loan loan : currentLoansReceived) {
 			if (loan.getLoanID().equals(loanID)) {
 				return loan;
 			}
 		}
 		return null;
+	}
+
+	// retrieves a loan that the customer has lent
+	public Loan getLentLoan(String loanID) {
+		for (Loan loan : currentLoansOffered) {
+			if (loan.getLoanID().equals(loanID)) {
+				return loan;
+			}
+		}
+		return null;
+	}
+
+	// removes a loan from the customer's account
+	public void removeLoan(String loanID) {
+		for (int index = 0; index < currentLoansOffered.size(); index++) {
+			if (currentLoansOffered.get(index).getLoanID().equals(loanID)) {
+				currentLoansOffered.remove(index);
+			}
+		}
+		for (int index = 0; index < currentLoansReceived.size(); index++) {
+			if (currentLoansReceived.get(index).getLoanID().equals(loanID)) {
+				currentLoansReceived.remove(index);
+			}
+		}
 	}
 
 }
