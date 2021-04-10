@@ -41,7 +41,7 @@ public class NewBank {
 		customers.put("Christina", christina);
 		
 		Customer john = new Customer("john9999");
-		john.addAccount(new SavingsAccount("Checking", 250.0));
+		john.addAccount(new CheckingAccount("Checking", 250.0));
 		john.setPassword("test9999");
 		customers.put("John", john);
 	}
@@ -204,45 +204,12 @@ public class NewBank {
 				"added, then the account name to deposit funds to.";
 	}
 
-	// deposits money into a specified account
-	/* SUPERSEDED METHOD
 	private String depositFunds(CustomerID customer, String[] requestParams) {
-		// confirm that the correct number of parameters have been input
-		if(requestParams.length == 3) {
-			// confirm that input parameters are valid, and provide prompts to the user if not
-			String userPrompts = "";
-			double depositAmount = 0;
-			try {
-				depositAmount = Double.parseDouble(requestParams[1]);
-				if(depositAmount <= 0) {
-					// a deposit amount must be positive
-					userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-				}
-			} catch (NumberFormatException e) {
-				userPrompts += "\nDeposit amount '" + requestParams[1] + "' is not valid.";
-			}
-			Account depositAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
-			if(depositAccount == null) {
-				userPrompts += "\nAccount for deposit '" + requestParams[2] + "' does not exist.";
-			}
-			if(userPrompts.length() > 0) {
-				return "Deposit could not be made:" + userPrompts;
-			}
-			// deposit funds into the specified account
-			depositAccount.depositFunds(depositAmount);
-			return depositAmount + " deposited to " + depositAccount.getName() + "\n" + "Current balance in " +
-					depositAccount.toString();
-		} else {
-			return "Invalid entry. Try DEPOSIT <amount> <account name>";
-		}
-	}
-	*/
-	private String depositFunds(CustomerID customer, String[] requestParams) {
+		if(requestParams.length!=4) return "Invalid parameters. Please try again.";
 		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to make deposits. Please contact your admin.";
 		String[] bankDetails = {"PAY",requestParams[1],"Bank Vault",requestParams[2],requestParams[3]};
 		return makePayment(customer,bankDetails);
 	}
-	
 
 	// transfers money between two accounts belonging to the same customer
 	private String transferFunds(CustomerID customer, String[] requestParams) {
@@ -312,24 +279,29 @@ public class NewBank {
 					// a transfer amount must be positive
 					userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 					inputsValid = false;
+					return userPrompts;
 				}
 			} catch (NumberFormatException e) {
 				userPrompts += "\nPayment amount '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Account withdrawalAccount = customers.get(customer.getKey()).getAccount(requestParams[2]);
 			if(withdrawalAccount == null) {
 				userPrompts += "\nAccount for withdrawal '" + requestParams[2] + "' does not exist.";
 				inputsValid = false;
+				return userPrompts;
 			} else if(!withdrawalAccount.canPay) {
 				userPrompts += "\n'" + withdrawalAccount.getName() + "' account cannot perform payments to other customers.";
 				inputsValid = false;
+				return userPrompts;
 			}
 			Customer payee = customers.get(requestParams[3]);
 			if(payee == null) {
 				// This doesn't work as expected (returns an infinite loop of "null")
 				// TODO - fixing the invalid username/password issue that is on Trello might solve this problem
-				userPrompts += "Payee '" + requestParams[3] + "' does not exist.\n";
+				userPrompts += "Payee '" + requestParams[3] + "' does not exist.";
+				return userPrompts;
 			}
 			Account payeeAccount = payee.getAccount(requestParams[4]);
 			if (payeeAccount == null) {
@@ -347,6 +319,7 @@ public class NewBank {
 			return "Payment of " + paymentAmount + " successfully made.\n" +
 					"Remaining balance in " + withdrawalAccount.toString();
 		}
+		if(requestParams[2].equals("Bank Vault")) return "Invalid entry. Try DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME>";
 		return "Invalid entry. Try PAY <amount> <account to pay from> <payee name> <payee account>";
 	}
 
