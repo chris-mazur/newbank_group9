@@ -48,7 +48,7 @@ public class NewBank {
 		accountNumberCurrent = 77771234;
 
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new BankVault("BankVault", 1000000.0));
+		bhagy.addAccount(new BankVault(sortCode, assignAccountNumber(),"BankVault", 1000000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		bhagy.setIsAdmin(true);
@@ -191,6 +191,7 @@ public class NewBank {
 
 	private String checkoverdraft(CustomerID customer) {
 		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
+	}
 
 	private String showContactDetails(CustomerID customer, String[] requestParams) {
 		if(requestParams.length > 1) return "Incorrect format.";
@@ -416,8 +417,8 @@ public class NewBank {
 				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
 				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
 				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
-				"LOGOUT - Logs you out from the NewBank command line application.";
-    		"*********** ADMIN ONLY ***********\n" +
+				"LOGOUT - Logs you out from the NewBank command line application." +
+    			"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
 				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
