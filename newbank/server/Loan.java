@@ -17,9 +17,10 @@ public class Loan {
     private double repaymentAmount;
     private double totalInterestAccrued;
     private boolean fundsCommitted = false;
-    private boolean loanActive;
     private Date repaymentDeadline;
     private Date lastUpdated;
+    public boolean loanStarted;
+    public boolean loanFinished;
 
     // a loan can be set up by a customer who wants to lend money, or a customer who wants to borrow money
     public Loan(double principalAmount, double interestRate, int duration, Date setupDate) {
@@ -29,7 +30,8 @@ public class Loan {
         this.loanDuration = duration;
         this.remainingDuration = duration;
         this.lastUpdated = setupDate;
-        this.loanActive = false;
+        this.loanStarted = false;
+        this.loanFinished = false;
         loanID = "Loan" + ID;
         ID++;
     }
@@ -94,7 +96,7 @@ public class Loan {
         borrowingAccount.depositFunds(principalAmount);
         setRepaymentDeadline(startDate);
         lastUpdated = startDate;
-        loanActive = true;
+        loanStarted = true;
     }
 
     // set or update the repayment deadline for the loan
@@ -114,7 +116,7 @@ public class Loan {
 
     // update the outstanding balance on the loan, the time remaining, and the total interest accrued
     private void refreshLoanData(Date currentDate) {
-        if (loanActive) {
+        if (loanStarted) {
             double previousRepaymentAmount = repaymentAmount;
             // apply a late repayment penalty if required
             while (currentDate.after(repaymentDeadline)) {
@@ -147,9 +149,16 @@ public class Loan {
         lendingAccount.depositFunds(repayment);
         repaymentAmount -= repayment;
         if (currencyNum(repaymentAmount) == 0) {
-            loanActive = false; // the loan has been repaid in full and can be deleted
+            loanFinished = true;
         }
         lastUpdated = currentDate;
+    }
+
+    // return the loan funds to the lender
+    public void cancelLoan() {
+        if (!loanStarted) {
+            lendingAccount.depositFunds(principalAmount);
+        }
     }
 
 }

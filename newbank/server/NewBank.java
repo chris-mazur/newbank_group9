@@ -125,6 +125,8 @@ public class NewBank {
 					return borrowFrom(customer, requestParams);
 				case "REPAY":
 					return loanRepayment(customer, requestParams);
+				case "REMOVELOAN":
+					return removeLoan(customer, requestParams);
 				case "TIMETRAVEL": // for testing purposes
 					return timeTravel(requestParams);
 				case "LOGOUT":
@@ -355,6 +357,8 @@ public class NewBank {
 				"account you would like the money to be paid into.\n" +
 				"REPAY - Pay back money from a loan; enter the command followed by the amount to repay and the " +
 				"name of the account you would like to make the payment from.\n" +
+				"REMOVELOAN - Remove a loan from your account; enter the command followed by the name of the loan to " +
+				"be removed (it must not have an outstanding balance to be repaid).\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
 				"SHOWCONTACTDETAILS - shows all contact details.\n" +				
 				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
@@ -527,7 +531,7 @@ public class NewBank {
 		}
 		// check that the customer is not currently borrowing money
 		if (customer.numLoansReceived() > 0) {
-			userPrompts += "\nYou are not eligible to lend money while you have loans to pay back:\n" +
+			userPrompts += "\nYou are not eligible to lend money while you have loans to pay back:" +
 					customer.showLoansReceived(calendar.getTime());
 		}
 		// check that the customer is not trying to offer more loans than is permitted by the bank
@@ -789,7 +793,7 @@ public class NewBank {
 		double repaymentAmount = 0;
 		boolean inputsValid = true;
 		if (requestParams.length == 4) {
-			Loan loanToRepay = customer.getLoan(requestParams[1]);
+			Loan loanToRepay = customer.getBorrowedLoan(requestParams[1]);
 			if (loanToRepay == null) {
 				userPrompts += "\nLoan ID '" + requestParams[1] + "' is not valid.";
 				inputsValid = false;
@@ -836,6 +840,48 @@ public class NewBank {
 			return "Unable to make repayment on loan:" + userPrompts;
 		}
 		return "Invalid entry. Try REPAY <Loan ID> <amount to repay> <account to pay from>";
+	}
+
+	// removes a loan from a customer's account provided that there is no money to be repaid
+	private String removeLoan(CustomerID customerID, String[] requestParams) {
+		Customer customer = customers.get(customerID.getKey());
+		// confirm that the input parameters are valid and provide prompts to the user if not
+		if (requestParams.length == 2) {
+			String loanID = requestParams[1];
+			if (customer.getBorrowedLoan(loanID) != null) {
+				Loan loan = customer.getBorrowedLoan(loanID);
+				// confirm that there is no money to be repaid on the loan
+				if (loan.loanFinished || !loan.loanStarted) {
+					// remove loan from customer loans received list
+					customer.removeLoan(loanID);
+					// remove loan from marketplace if it is still there
+					loanOfferMarketPlace.remove(loanID);
+					loanRequestMarketPlace.remove(loanID);
+					return loanID + " has been removed from your account.";
+				} else {
+					return "Loan cannot be removed as there is still an outstanding balance to be repaid.";
+				}
+			} else if (customer.getLentLoan(loanID) != null) {
+				Loan loan = customer.getLentLoan(loanID);
+				// confirm that there is no money to be repaid on the loan
+				if (loan.loanFinished || !loan.loanStarted) {
+					if (!loan.loanStarted) {
+						loan.cancelLoan(); // repay the loan balance to the lender
+					}
+					// remove loan from customer loans received list
+					customer.removeLoan(loanID);
+					// remove loan from marketplace if it is still there
+					loanOfferMarketPlace.remove(loanID);
+					loanRequestMarketPlace.remove(loanID);
+					return loanID + " has been removed from your account.";
+				} else {
+					return "Loan cannot be removed as there is still an outstanding balance to be repaid.";
+				}
+			} else {
+				return "'" + loanID + "' is not a valid loan ID for any of the loans associated with your account.";
+			}
+		}
+		return "Invalid input. Try REMOVELOAN <loan ID>";
 	}
 
 	// skips ahead by a specified number of days to a future date in the bank's calendar
