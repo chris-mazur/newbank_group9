@@ -6,6 +6,6 @@ public class BankVault extends Account {
         super(accountSortCode, accountNumber, accountName, openingBalance);
         this.canPay = true;
         this.canLoan = true;
-        this.accountType = "Bank Vault";
+        this.accountType = "Checking";
     }
 }

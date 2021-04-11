@@ -48,7 +48,7 @@ public class NewBank {
 		accountNumberCurrent = 77771234;
 
 		Customer bhagy = new Customer("bhagy1234");
-		bhagy.addAccount(new BankVault(sortCode, assignAccountNumber(),"BankVault", 1000000.0));
+		bhagy.addAccount(new BankVault(sortCode, assignAccountNumber(), "BankVault", 1000000.0));
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		bhagy.setIsAdmin(true);
@@ -150,6 +150,12 @@ public class NewBank {
 					return changeMobilePhone(customer, requestParams);
 				case "CHANGEMYLANDLINE":
 					return changeLandlinePhone(customer, requestParams);
+				case "PROMOTE":
+					return promote(customer, requestParams);
+				case "DEMOTE":
+					return demote(customer, requestParams);
+				case "CHECKPERMISSIONS":
+					return checkPermissions(customer, requestParams);
 				default:
 					return "Invalid input. Please try again or type 'HELP' for available options.";
 			}
@@ -173,6 +179,34 @@ public class NewBank {
 		return accountData;
 	}
 
+	private String promote(CustomerID customer, String[] requestParams) {
+		if(requestParams.length != 2) return "Invalid input. Please try again.";
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to do this. Please contact your admin.";
+		Customer user = customers.get(requestParams[1]);
+		if(user == null) return "User does not exist. Please try again.";
+		if(user.getIsAdmin()) return requestParams[1] + " already has admin privileges.";
+		user.setIsAdmin(true);
+		return requestParams[1] + " has been granted admin privileges.";
+	}
+
+	private String demote(CustomerID customer, String[] requestParams) {
+		if(requestParams.length != 2) return "Invalid input. Please try again.";
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to do this. Please contact your admin.";
+		Customer user = customers.get(requestParams[1]);
+		if(user == null) return "User does not exist. Please try again.";
+		if(!user.getIsAdmin()) return requestParams[1] + " is a regular user.";
+		user.setIsAdmin(false);
+		return requestParams[1] + " has been demoted to a regular user.";
+	}
+
+	private String checkPermissions(CustomerID customer, String[] requestParams) {
+		if(requestParams.length != 2) return "Invalid input. Please try again.";
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to do this. Please contact your admin.";
+		Customer user = customers.get(requestParams[1]);
+		if(user == null) return "User does not exist. Please try again.";
+		if(user.getIsAdmin()) return requestParams[1] + " has admin privileges";
+		return requestParams[1] + " is a regular user";
+	}
 
 	private String overdraft(CustomerID customer, String[] requestParams) {
 		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to change overdraft limits. Please contact your admin.";
@@ -418,10 +452,13 @@ public class NewBank {
 				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
 				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.\n" +
-    		"*********** ADMIN ONLY ***********\n" +
+    				"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
-				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer\n" +
+				"CHECKPERMISSIONS <CUSTOMER> - checks if a user is an admin or a regular user\n" +
+				"PROMOTE <CUSTOMER> - promote a user to Admin\n" +
+				"DEMOTE <CUSTOMER> - demote Admin to regular user";
 	}
 
 	// deposits money into a specified account
