@@ -8,4 +8,5 @@ public class CheckingAccount extends Account {
         this.canLoan = true;
         this.accountType = "Checking";
     }
+
 }

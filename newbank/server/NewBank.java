@@ -42,7 +42,7 @@ public class NewBank {
 		accountNumberList = new ArrayList<>();
 		addTestData();
 	}
-
+	
 	private void addTestData() {
 		//initial starting account number
 		accountNumberCurrent = 77771234;
@@ -52,7 +52,7 @@ public class NewBank {
 		bhagy.setPassword("test1234");
 		customers.put("Bhagy", bhagy);
 		bhagy.setIsAdmin(true);
-		
+
 		Customer christina = new Customer("christina5678");
 		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0));
 		christina.setPassword("test5678");
@@ -108,6 +108,8 @@ public class NewBank {
 					return newSavingsAccount(customer, requestParams);
 				case "NEWCHECKINGACCOUNT":
 					return newCheckingAccount(customer, requestParams);
+				case "RENAMEACCOUNT":
+					return renameAccounts(customer, requestParams);
 				case "DEPOSIT":
 					return depositFunds(customer, requestParams);
 				case "SETOVERDRAFT":
@@ -213,14 +215,14 @@ public class NewBank {
 		Integer overdraft = -Integer.valueOf(requestParams[1]);
 		Customer client = customers.get(requestParams[2]);
 		if(client!=null) {
-			client.setOverdraft(overdraft);	
+			client.setOverdraft(overdraft);
 		} else {
 			return "User " + requestParams[2] + " does not exist";
 		}
-		
+
 		return "The overdraft for " + requestParams[2] + " has been set as -" + requestParams[1];
 	}
-	
+
 	private String checkoverdraft(CustomerID customer) {
 		return "Your overdraft limit is set to: " + customers.get(customer.getKey()).getOverdraft();
 	}
@@ -233,7 +235,7 @@ public class NewBank {
 		String phone = customers.get(customer.getKey()).getPhoneNo();
 		String landline = customers.get(customer.getKey()).getLandlinePhoneNo();
 		String email = customers.get(customer.getKey()).getEmailAddress();
-		
+
 		if(address == null && postcode == null && phone == null && email == null && landline == null) {
 			return "No contact details have been added yet.";
 		}
@@ -255,10 +257,10 @@ public class NewBank {
 		}
 		return details;
 	}
-	
-	private String changeAddress(CustomerID customer, String[] requestParams) {	
+
+	private String changeAddress(CustomerID customer, String[] requestParams) {
 		String address = "";
-		if(requestParams.length > 1) {		
+		if(requestParams.length > 1) {
 			for(int i=1;i<requestParams.length;i++) {
 				address += requestParams[i];
 				if(i!=requestParams.length-1) address += " ";
@@ -268,12 +270,12 @@ public class NewBank {
 		}
 		return "Incorrect format.";
 	}
-	
+
 	private String changePostcode(CustomerID customer, String[] requestParams) {
 		// Regex based on assets.publishing.service.gov.uk
 		String postcode;
 		if(requestParams.length == 3) {
-			postcode = requestParams[1] + " " + requestParams[2];	
+			postcode = requestParams[1] + " " + requestParams[2];
 			String regex = "^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$";
 			Pattern pattern = Pattern.compile(regex);
 			Matcher matcher = pattern.matcher(postcode);
@@ -284,7 +286,7 @@ public class NewBank {
 		}
 		return "Incorrect format.";
 	}
-	
+
 	private String changeEmail(CustomerID customer, String[] requestParams) {
 		if(requestParams.length == 2){
 			// Regex based on https://www.regular-expressions.info/email.html
@@ -298,16 +300,16 @@ public class NewBank {
 		}
 		return "Incorrect format.";
 	}
-	
-	private String changeMobilePhone(CustomerID customer, String[] requestParams) {	
-		String phone = "";	
-		if(requestParams.length > 1) {		
+
+	private String changeMobilePhone(CustomerID customer, String[] requestParams) {
+		String phone = "";
+		if(requestParams.length > 1) {
 			for(int i=1;i<requestParams.length;i++) {
 				phone += requestParams[i];
 			}
 		} else {
 			return "Incorrect format.";
-		}		
+		}
 		// Regex based on https://www.regextester.com/104299
 		String regex = "((\\+44(\\s\\(0\\)\\s|\\s0\\s|\\s)?)|0)7\\d{3}(\\s)?\\d{6}";
 		Pattern pattern = Pattern.compile(regex);
@@ -316,12 +318,12 @@ public class NewBank {
 			customers.get(customer.getKey()).setPhoneNo(phone);
 			return "Phone number changed to " + phone + ".";
 		}
-		return "Incorrect format.";			
+		return "Incorrect format.";
 	}
-	
-	private String changeLandlinePhone(CustomerID customer, String[] requestParams) {	
+
+	private String changeLandlinePhone(CustomerID customer, String[] requestParams) {
 		if(requestParams.length!=4) return "Incorrect format.";
-		String phone = requestParams[1] + " " + requestParams[2] + " " + requestParams[3];	
+		String phone = requestParams[1] + " " + requestParams[2] + " " + requestParams[3];
 		// Regex based on https://regexlib.com/
 		String regex = "^((\\(?0\\d{4}\\)?\\s?\\d{3}\\s?\\d{3})|(\\(?0\\d{3}\\)?\\s?\\d{3}\\s?\\d{4})|(\\(?0\\d{2}\\)?\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$";
 		Pattern pattern = Pattern.compile(regex);
@@ -331,6 +333,28 @@ public class NewBank {
 			return "Landline phone number changed to " + phone + ".";
 		}
 		return "Incorrect format.";
+	}
+
+	private String renameAccounts(CustomerID customer, String[] requestParams) {
+		String current;
+		String renamed;
+		if(requestParams.length != 3) {
+			return "Invalid input. Try again";
+		} else {
+			current = requestParams[1];
+			renamed = requestParams[2];
+			for(Account account : customers.get(customer.getKey()).getAccounts()) {
+				if(account.getName().equals(renamed)) {
+					return "Account name already exists. Try again with a unique name.";
+				}
+			}
+			if(customers.get(customer.getKey()).getAccount(current) != null) {
+				customers.get(customer.getKey()).getAccount(current).setName(renamed);
+			} else {
+				return "Account does not exist. Check the spelling and try again.";
+			}
+		}
+		return "Account name changed from " + current + " to " + renamed;
 	}
 
 	private String newSavingsAccount(CustomerID customer, String[] requestParams) {
@@ -400,6 +424,9 @@ public class NewBank {
 				"NEWCHECKINGACCOUNT - Creates a new Checking account; enter the command followed by the name " +
 				"you would like to give to the account.\n" +
 				"CHECKOVERDRAFT - Displays your current overdraft limit.\n" +
+				"RENAMEACCOUNT <CURRENT-NAME> <NEW-NAME> - rename your account\n" +
+				"DEPOSIT - Adds funds to one of your accounts; enter the command followed by the balance to be " +
+				"added, then the account name to deposit funds to.\n" +
 				"MOVE - Moves funds between your accounts; enter the command followed by the balance to " +
 				"be transferred, the account name to withdraw from, and the account name to deposit to.\n" +
 				"PAY - Make a payment to another bank account; enter the command followed by the payment amount, " +
@@ -418,14 +445,14 @@ public class NewBank {
 				"REMOVELOAN - Remove a loan from your account; enter the command followed by the name of the loan to " +
 				"be removed (it must not have an outstanding balance to be repaid).\n" +
 				"TIMETRAVEL - Skips ahead to a future date; enter the command followed by a number of days.\n" +
-				"SHOWCONTACTDETAILS - shows all contact details.\n" +				
+				"SHOWCONTACTDETAILS - shows all contact details.\n" +
 				"CHANGEMYADDRESS <NEW ADDRESS> - change your street address\n" +
 				"CHANGEPOSTCODE <NEW POSTCODE> - change your postcode\n" +
 				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
 				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
 				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
 				"LOGOUT - Logs you out from the NewBank command line application.\n" +
-    			"*********** ADMIN ONLY ***********\n" +
+    		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
 				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer\n" +
@@ -434,6 +461,7 @@ public class NewBank {
 				"DEMOTE <CUSTOMER> - demote Admin to regular user";
 	}
 
+	// deposits money into a specified account
 	private String depositFunds(CustomerID customer, String[] requestParams) {
 		if(requestParams.length!=4) return "Invalid parameters. Please try again.";
 		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to make deposits. Please contact your admin.";
@@ -644,6 +672,12 @@ public class NewBank {
 			Account lendingAccount = customer.getAccount(requestParams[2]);
 			if (lendingAccount == null) {
 				userPrompts += "\nAccount to lend from '" + requestParams[2] + "' does not exist.";
+				inputsValid = false;
+			} else if(!lendingAccount.canLoan) {
+				userPrompts += "\n'" + lendingAccount.getName() + "' account cannot loan money to other customers.";
+				inputsValid = false;
+			} else if (lendingAccount.getBalance() < lendingAmount) {
+				userPrompts += "\nInsufficient funds in " + lendingAccount.toString();
 				inputsValid = false;
 			}
 			try {
