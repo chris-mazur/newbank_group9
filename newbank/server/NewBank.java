@@ -16,15 +16,88 @@ public class NewBank {
 	private static final NewBank bank = new NewBank();
 
 	// parameters set by the bank
-	private static final int lenderLoanLimit = 3; // limits the number of loans a lender can create
-	private static final double lenderLoanSizeLimit = 0.8; // limits the total size of loans relative to lender funds
-	private static final int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
-	private static final int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
-	private static final double shortTermInterestRate = 0.05;
-	private static final int shortTermInterestDuration = 4; // weeks
-	private static final double mediumTermInterestRate = 0.04;
-	private static final int mediumTermInterestDuration = 12; // weeks
-	private static final double longTermInterestRate = 0.03;
+	private static int lenderLoanLimit = 3; // limits the number of loans a lender can create
+	private static double lenderLoanSizeLimit = 0.8; // limits the total size of loans relative to lender funds
+	private static int borrowerLoanLimit = 3; // limits the number of loans a borrower can accept
+	private static int borrowerLoanSizeLimit = 4; // limits the size of a loan relative to borrower funds
+	private static double shortTermInterestRate = 0.05;
+	private static int shortTermInterestDuration = 4; // weeks
+	private static double mediumTermInterestRate = 0.04;
+	private static int mediumTermInterestDuration = 12; // weeks
+	private static double longTermInterestRate = 0.03;
+
+	public static int getLenderLoanLimit() {
+		return lenderLoanLimit;
+	}
+
+	public static void setLenderLoanLimit(int lenderLoanLimit) {
+		NewBank.lenderLoanLimit = lenderLoanLimit;
+	}
+
+	public static double getLenderLoanSizeLimit() {
+		return lenderLoanSizeLimit;
+	}
+
+	public static void setLenderLoanSizeLimit(double lenderLoanSizeLimit) {
+		NewBank.lenderLoanSizeLimit = lenderLoanSizeLimit;
+	}
+
+	public static int getBorrowerLoanLimit() {
+		return borrowerLoanLimit;
+	}
+
+	public static void setBorrowerLoanLimit(int borrowerLoanLimit) {
+		NewBank.borrowerLoanLimit = borrowerLoanLimit;
+	}
+
+	public static int getBorrowerLoanSizeLimit() {
+		return borrowerLoanSizeLimit;
+	}
+
+	public static void setBorrowerLoanSizeLimit(int borrowerLoanSizeLimit) {
+		NewBank.borrowerLoanSizeLimit = borrowerLoanSizeLimit;
+	}
+
+	public static double getShortTermInterestRate() {
+		return shortTermInterestRate;
+	}
+
+	public static void setShortTermInterestRate(double shortTermInterestRate) {
+		NewBank.shortTermInterestRate = shortTermInterestRate;
+	}
+
+	public static int getShortTermInterestDuration() {
+		return shortTermInterestDuration;
+	}
+
+	public static void setShortTermInterestDuration(int shortTermInterestDuration) {
+		NewBank.shortTermInterestDuration = shortTermInterestDuration;
+	}
+
+	public static double getMediumTermInterestRate() {
+		return mediumTermInterestRate;
+	}
+
+	public static void setMediumTermInterestRate(double mediumTermInterestRate) {
+		NewBank.mediumTermInterestRate = mediumTermInterestRate;
+	}
+
+	public static int getMediumTermInterestDuration() {
+		return mediumTermInterestDuration;
+	}
+
+	public static void setMediumTermInterestDuration(int mediumTermInterestDuration) {
+		NewBank.mediumTermInterestDuration = mediumTermInterestDuration;
+	}
+
+	public static double getLongTermInterestRate() {
+		return longTermInterestRate;
+	}
+
+	public static void setLongTermInterestRate(double longTermInterestRate) {
+		NewBank.longTermInterestRate = longTermInterestRate;
+	}
+
 	private static final String sortCode = "07-16-18";
 	private static int accountNumberCurrent;
 	private static ArrayList<Integer> accountNumberList;
@@ -150,12 +223,73 @@ public class NewBank {
 					return changeMobilePhone(customer, requestParams);
 				case "CHANGEMYLANDLINE":
 					return changeLandlinePhone(customer, requestParams);
+				case "SHOWBANKRULES":
+					return showBankRules(customer, requestParams);
+				case "BANK":
+					return bankLimits(customer, requestParams);
 				default:
 					return "Invalid input. Please try again or type 'HELP' for available options.";
 			}
 		}
 		return "FAIL";
 	}
+
+	private String bankLimits(CustomerID customer, String[] requestParams) {
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to do this. Please contact your admin.";
+		if(requestParams.length!=3) return "Invalid entry.";
+		if(!isNumeric(requestParams[2])) return "Invalid entry.";
+
+		switch(requestParams[1]) {
+			case "LENDERLOANLIMIT":
+				setLenderLoanLimit(Integer.parseInt(requestParams[2]));
+				return "Lender loan limit changed to: " + requestParams[2];
+			case "LENDERLOANSIZELIMIT":
+				setLenderLoanSizeLimit(Double.parseDouble(requestParams[2]));
+				return "Lender loan size limit changed to: " + requestParams[2];
+			case "BORROWERLOANLIMIT":
+				setBorrowerLoanLimit(Integer.parseInt(requestParams[2]));
+				return "Borrower loan limit changed to: " + requestParams[2];
+			case "BORROWERLOANSIZELIMIT":
+				setBorrowerLoanSizeLimit(Integer.parseInt(requestParams[2]));
+				return "Borrower loan size limit changed to: " + requestParams[2];
+			case "SHORTTERMINTERESTRATE":
+				setShortTermInterestRate(Double.parseDouble(requestParams[2]));
+				return "Short term interest rate changed to: " + requestParams[2];
+			case "SHORTTERMINTERESTDURATION":
+				setShortTermInterestDuration(Integer.parseInt(requestParams[2]));
+				return "Short term interest duration changed to: " + requestParams[2];
+			case "MEDIUMTTERMINTERESTRATE":
+				setMediumTermInterestRate(Double.parseDouble(requestParams[2]));
+				return "Medium term interest rate changed to: " + requestParams[2];
+			case "MEDIUMTERMINTERESTDURATION":
+				setMediumTermInterestDuration(Integer.parseInt(requestParams[2]));
+				return "Medium term interest duration changed to: " + requestParams[2];
+			case "LONGTERMINTERESTRATE":
+				setLongTermInterestRate(Double.parseDouble(requestParams[2]));
+				return "Long term interest rate changed to: " + requestParams[2];
+			default:
+				return "Invalid entry.";
+		}
+
+	}
+
+	public String showBankRules(CustomerID customer, String[] requestParams) {
+		if(!customers.get(customer.getKey()).getIsAdmin()) return "You do not have permissions to do this. Please contact your admin.";
+		if(requestParams.length!=1) return "Invalid entry.";
+		String response = "";
+		response += "Bank limits=" +
+				"\n{lenderLoanLimit=" + lenderLoanLimit + "}" +
+				"\n{lenderLoanSizeLimit=" + lenderLoanSizeLimit + "}" +
+				"\n{borrowerLoanLimit=" + borrowerLoanLimit + "}" +
+				"\n{borrowerLoanSizeLimit=" + borrowerLoanSizeLimit + "}" +
+				"\n{shortTermInterestRate=" + shortTermInterestRate + "}" +
+				"\n{shortTermInterestDuration=" + shortTermInterestDuration + "}" +
+				"\n{mediumTermInterestRate=" + mediumTermInterestRate + "}" +
+				"\n{mediumTermInterestDuration=" + mediumTermInterestDuration + "}" +
+				"\n{longTermInterestRate=" + longTermInterestRate + "}";
+		return response;
+	}
+
 
 	// displays information about all accounts and loans held by the customer
 	private String showMyAccounts(CustomerID customerID) {
@@ -421,7 +555,18 @@ public class NewBank {
     		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
-				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer\n" +
+				"SHOWBANKRULES - show current bank rules and limits\n" +
+				"BANK LENDERLOANLIMIT <INTEGER> - limits the number of loans a lender can create\n" +
+				"BANK LENDERLOANSIZELIMIT <DECIMAL> - limits the total size of loans relative to lender funds\n" +
+				"BANK BORROWERLOANLIMIT <INTEGER> - limits the number of loans a borrower can accept\n" +
+				"BANK BORROWERLOANSIZELIMIT <INTEGER> - limits the size of a loan relative to borrower funds\n" +
+				"BANK SHORTTERMINTERESTRATE <DECIMAL> - set short term interest rate\n" +
+				"BANK SHORTTERMINTERESTDURATION <NR WEEKS> - short term interest duration\n" +
+				"BANK MEDIUMTERMINTERESTRATE <DECIMAL> - set medium term interest rate\n" +
+				"BANK MEDIUMTERMINTERESTDURATION <NR WEEKS> - medium term interest duration\n" +
+				"BANK LONGTERMINTERESTRATE <DECIMAL> - set long term interest rate\n" +
+				"BANK LONGTERMINTERESTDURATION <NR WEEKS> - long term interest duration";
 	}
 
 	// deposits money into a specified account
