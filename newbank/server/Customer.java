@@ -160,6 +160,10 @@ public class Customer {
 		return null;
 	}
 
+	public ArrayList<Account> getAllAccounts() {
+		return accounts;
+	}
+
 	// add a loan to the customer account in which the customer is the lender
 	public void offerLoan(Loan newLoan) {
 		currentLoansOffered.add(newLoan);
