@@ -9,4 +9,5 @@ public class SavingsAccount extends Account {
         this.accountType = "Savings";
     }
     //TODO - Savings Accounts could be associated with an interest rate set by the bank
+
 }

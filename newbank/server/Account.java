@@ -16,13 +16,17 @@ abstract class Account {
 		this.accountName = accountName;
 		this.accountBalance = openingBalance;
 	}
-
+	
 	public String toString() {
 		return (accountType + " - " + accountName + " (" + accountSortCode + " " + accountNumber + "): " + accountBalance);
 	}
 
 	public String getName() {
 		return accountName;
+	}
+
+	public void setName(String name) {
+		this.accountName = name;
 	}
 
 	public String getAccountType() {
