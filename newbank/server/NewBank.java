@@ -417,8 +417,8 @@ public class NewBank {
 				"CHANGEMYEMAIL <NEW EMAIL NO> - change your email address\n" +
 				"CHANGEMYMOBILE <NEW PHONE NO> - change your mobile phone number in a format +44XXXXXXXXXX or 0XXXXXXXXXX\n" +
 				"CHANGEMYLANDLINE <NEW PHONE NO> - change your landline phone number in a format 0XXXX XXX XXX\n" +
-				"LOGOUT - Logs you out from the NewBank command line application." +
-    			"*********** ADMIN ONLY ***********\n" +
+				"LOGOUT - Logs you out from the NewBank command line application.\n" +
+    		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
 				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
