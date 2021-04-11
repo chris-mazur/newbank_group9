@@ -25,6 +25,7 @@ public class NewBank {
 	private static final double mediumTermInterestRate = 0.04;
 	private static final int mediumTermInterestDuration = 12; // weeks
 	private static final double longTermInterestRate = 0.03;
+	private static double savingsInterestRate = 0.01;
 	private static final String sortCode = "07-16-18";
 	private static int accountNumberCurrent;
 	private static ArrayList<Integer> accountNumberList;
@@ -54,7 +55,7 @@ public class NewBank {
 		bhagy.setIsAdmin(true);
 		
 		Customer christina = new Customer("christina5678");
-		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0));
+		christina.addAccount(new SavingsAccount(sortCode, assignAccountNumber(), "Savings", 1500.0,0.01,calendar.getTime()));
 		christina.setPassword("test5678");
 		customers.put("Christina", christina);
 		
@@ -148,6 +149,8 @@ public class NewBank {
 					return changeMobilePhone(customer, requestParams);
 				case "CHANGEMYLANDLINE":
 					return changeLandlinePhone(customer, requestParams);
+				case "PAYINTEREST":
+					return payInterest(customer,requestParams);
 				default:
 					return "Invalid input. Please try again or type 'HELP' for available options.";
 			}
@@ -307,7 +310,7 @@ public class NewBank {
 				return "Account name is invalid. Try again";
 			} else {
 				String accountName = requestParams[1];
-				customers.get(customer.getKey()).addAccount(new SavingsAccount(sortCode, assignAccountNumber(), accountName,0.00));
+				customers.get(customer.getKey()).addAccount(new SavingsAccount(sortCode, assignAccountNumber(), accountName,0.00,savingsInterestRate,calendar.getTime()));
 				return "Account created: " + accountName;
 			}
 		}
@@ -394,7 +397,8 @@ public class NewBank {
     		"*********** ADMIN ONLY ***********\n" +
 				"DEPOSIT <AMOUNT> <CUSTOMER> <CUSTOMER'S ACCOUNT NAME> - Adds funds to one of your accounts; enter the command followed by the balance to be\n" +
 				"added, then the account name to deposit funds to.\n" +
-				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer";
+				"SETOVERDRAFT <AMOUNT (positive)> <CUSTOMER> - set an overdraft amount for the customer.\n" +
+				"PAYINTEREST <CUSTOMER> - Pays out any interest earnt on all Savings Accounts of a customer.";
 	}
 
 	private String depositFunds(CustomerID customer, String[] requestParams) {
@@ -906,6 +910,10 @@ public class NewBank {
 					Date departureDate = calendar.getTime();
 					calendar.add(calendar.DATE, days);
 					Date arrivalDate = calendar.getTime();
+
+					// recalculate all interest accrued on all savings accounts
+					customers.forEach((key,value) -> updateAllSavingsInterest(value));
+
 					return "Travelled forward " + days + " days from " + departureDate + " to " + arrivalDate;
 
 				} else {
@@ -918,4 +926,41 @@ public class NewBank {
 		return "Invalid entry. Try TIMETRAVEL <number of days into the future>";
 	}
 
+	//Allows Admin users to deposit interest earned into a customer's saving account
+	//PAYINTEREST <Customer>
+	private String payInterest(CustomerID customer, String[] requestParams) {
+		if (!customers.get(customer.getKey()).getIsAdmin()) {
+			return "You do not have permission to perform this action.";
+		}
+		if(requestParams.length == 2) {
+			String userPrompts = "";
+			Customer payee = customers.get(requestParams[1]);
+			if (payee == null) {
+				userPrompts += "Payee '" + requestParams[1] + "' does not exist.";
+				return userPrompts;
+			} else {
+				userPrompts = "Customer: " + requestParams[1];
+				for (Account a : payee.getAllAccounts()) {
+					if (a instanceof SavingsAccount) {
+						double interestToPay = ((SavingsAccount) a).payInterest((calendar.getTime()));
+						Account withdrawalAccount = customers.get(customer.getKey()).getAccount("BankVault");
+						withdrawalAccount.withdrawFunds(interestToPay);
+						a.depositFunds(interestToPay);
+						String interestToPayRounded = String.format("%.2f",interestToPay);
+						userPrompts += "\nInterest paid: " + interestToPayRounded + " to account " + a.getName();
+					}
+				}
+			}
+			return userPrompts;
+		}
+		return "Invalid entry. Try PAYINTEREST <Customer Name>";
+	}
+
+	private void updateAllSavingsInterest(Customer c) {
+		for (Account a : c.getAllAccounts()) {
+			if (a instanceof SavingsAccount) {
+				((SavingsAccount) a).updateInterestAccrued(calendar.getTime());
+			}
+		}
+	}
 }
