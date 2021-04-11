@@ -18,7 +18,7 @@ abstract class Account {
 	}
 
 	public String toString() {
-		return (accountType + " - " + accountName + " (" + accountSortCode + " " + accountNumber + "): " + accountBalance);
+		return (accountType + " - " + accountName + " (" + accountSortCode + " " + accountNumber + "): " + String.format("%.2f",accountBalance));
 	}
 
 	public String getName() {
